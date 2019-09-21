@@ -20,16 +20,16 @@
     <div id="mapid"></div>
     <script>
       var startPoint = [37.626, -122.149];
-      var myMap = L.map('mapid').setView(startPoint, 11);
+      var myMap = L.map("mapid").setView(startPoint, 11);
       L.tileLayer(
-        'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}',
+        "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}",
         {
           attribution:
             'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
           maxZoom: 18,
-          id: 'mapbox.streets',
+          id: "mapbox.streets",
           accessToken:
-            'pk.eyJ1IjoiYW5zb252YW5kb3JlbiIsImEiOiJjazB0cWh3dGEwZzloM250Y3J6aHRlc3ZrIn0.YP5RGsqokNVVyyJeDbRWyA',
+            "pk.eyJ1IjoiYW5zb252YW5kb3JlbiIsImEiOiJjazB0cWh3dGEwZzloM250Y3J6aHRlc3ZrIn0.YP5RGsqokNVVyyJeDbRWyA"
         }
       ).addTo(myMap);
       var dest = [37.775, -122.404];
@@ -40,34 +40,34 @@
       const dist50m = 3.57 * (Math.sqrt(1.7) + Math.sqrt(50));
 
       var horiz10m = L.circle(startPoint, {
-        color: 'red',
-        fillColor: '#f03',
+        color: "red",
+        fillColor: "#f03",
         fillOpacity: 0,
         weight: 2,
-        radius: dist10m * 1000,
+        radius: dist10m * 1000
       }).addTo(myMap);
       horiz10m.bindPopup(
-        'An object 10m tall will be just visible on the horizon this far away'
+        "An object 10m tall will be just visible on the horizon this far away"
       );
       var horiz50m = L.circle(startPoint, {
-        color: 'red',
-        fillColor: '#f03',
+        color: "red",
+        fillColor: "#f03",
         fillOpacity: 0,
         weight: 2,
-        radius: dist50m * 1000,
+        radius: dist50m * 1000
       }).addTo(myMap);
 
       var polygon = L.polygon([
         startPoint,
         dest,
-        [startPoint[0], dest[1]],
+        [startPoint[0], dest[1]]
       ]).addTo(myMap);
 
-      marker.bindPopup('<b>Hello world!</b><br>I am a popup.').openPopup();
+      marker.bindPopup("<b>Hello world!</b><br>I am a popup.").openPopup();
 
       var popup = L.popup()
         .setLatLng([37.7, -122.4])
-        .setContent('I am a standalone popup.')
+        .setContent("I am a standalone popup.")
         .openOn(myMap);
 
       /* var alertPop = L.popup();
@@ -79,31 +79,37 @@
       }
 
       myMap.on('click', onMapClick); */
+
       const jdTestCases = [
         [luxon.DateTime.utc(2000, 1, 1, 12), 2451545],
         [luxon.DateTime.utc(1999, 1, 1, 0), 2451179.5],
         [luxon.DateTime.utc(1987, 1, 27), 2446822.5],
         [luxon.DateTime.utc(1987, 6, 19, 12), 2446966],
         [luxon.DateTime.utc(-4712, 1, 1, 12), 0],
-        [luxon.DateTime.utc(2019, 9, 1), 2458738.5],
+        [luxon.DateTime.utc(2019, 9, 1), 2458738.5]
       ];
-      jdTestCases.forEach((t) => {
+      jdTestCases.forEach(t => {
         const jdRet = jd(t[0]);
-        console.log(t[0].toString(), jdRet, jdRet == t[1]);
+        console.log(t[0].toString(), jdRet, jdRet === t[1]);
       });
-      console.log('Julian Century', julianCentury(jdTestCases[5][0]));
+      console.log("Julian Century", julianCentury(jdTestCases[5][0]));
       console.log(
-        'Julian Ephemeris Century',
+        "Julian Ephemeris Century",
         julianEphemerisCentury(jdTestCases[5][0])
       );
       console.log(
-        'Julian Ephemeris Millenium',
+        "Julian Ephemeris Millenium",
         julianEphemerisMillenium(jdTestCases[5][0])
       );
       console.log(
-        'heliocentric longitude of earth',
+        "heliocentric longitude of earth",
         heliocentricLongitude(jdTestCases[5][0])
       );
+      console.log(
+        "heliocentric latitude of earth",
+        heliocentricLatitude(jdTestCases[5][0])
+      );
+      console.log("earth radius vector", earthRadiusVector(jdTestCases[5][0]));
     </script>
   </body>
 </html>
