@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
+      integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="./style.css" />
+    <script
+      src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"
+      integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="
+      crossorigin=""
+    ></script>
+    <script src="./luxon.min.js"></script>
+    <script src="./index.js"></script>
+  </head>
+  <body>
+    <div id="mapid"></div>
+    <script>
+      var startPoint = [37.626, -122.149];
+      var myMap = L.map('mapid').setView(startPoint, 11);
+      L.tileLayer(
+        'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}',
+        {
+          attribution:
+            'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+          maxZoom: 18,
+          id: 'mapbox.streets',
+          accessToken:
+            'pk.eyJ1IjoiYW5zb252YW5kb3JlbiIsImEiOiJjazB0cWh3dGEwZzloM250Y3J6aHRlc3ZrIn0.YP5RGsqokNVVyyJeDbRWyA',
+        }
+      ).addTo(myMap);
+      var dest = [37.775, -122.404];
+      var marker = L.marker(dest).addTo(myMap);
+      // draw circle to horizon for observer=1.7m
+      // with distant point at 10m, 50m
+      const dist10m = 3.57 * (Math.sqrt(1.7) + Math.sqrt(10));
+      const dist50m = 3.57 * (Math.sqrt(1.7) + Math.sqrt(50));
+
+      var horiz10m = L.circle(startPoint, {
+        color: 'red',
+        fillColor: '#f03',
+        fillOpacity: 0,
+        weight: 2,
+        radius: dist10m * 1000,
+      }).addTo(myMap);
+      horiz10m.bindPopup(
+        'An object 10m tall will be just visible on the horizon this far away'
+      );
+      var horiz50m = L.circle(startPoint, {
+        color: 'red',
+        fillColor: '#f03',
+        fillOpacity: 0,
+        weight: 2,
+        radius: dist50m * 1000,
+      }).addTo(myMap);
+
+      var polygon = L.polygon([
+        startPoint,
+        dest,
+        [startPoint[0], dest[1]],
+      ]).addTo(myMap);
+
+      marker.bindPopup('<b>Hello world!</b><br>I am a popup.').openPopup();
+
+      var popup = L.popup()
+        .setLatLng([37.7, -122.4])
+        .setContent('I am a standalone popup.')
+        .openOn(myMap);
+
+      /* var alertPop = L.popup();
+      function onMapClick(e) {
+        alertPop
+          .setLatLng(e.latlng)
+          .setContent('you clicked: ' + e.latlng.toString())
+          .openOn(myMap);
+      }
+
+      myMap.on('click', onMapClick); */
+      const jdTestCases = [
+        [luxon.DateTime.utc(2000, 1, 1, 12), 2451545],
+        [luxon.DateTime.utc(1999, 1, 1, 0), 2451179.5],
+        [luxon.DateTime.utc(1987, 1, 27), 2446822.5],
+        [luxon.DateTime.utc(1987, 6, 19, 12), 2446966],
+        [luxon.DateTime.utc(-4712, 1, 1, 12), 0],
+      ];
+      jdTestCases.forEach((t) => {
+        const jdRet = jd(t[0]);
+        console.log(t[0].toString(), jdRet, jdRet == t[1]);
+      });
+    </script>
+  </body>
+</html>
