@@ -86,30 +86,101 @@
         [luxon.DateTime.utc(1987, 1, 27), 2446822.5],
         [luxon.DateTime.utc(1987, 6, 19, 12), 2446966],
         [luxon.DateTime.utc(-4712, 1, 1, 12), 0],
-        [luxon.DateTime.utc(2019, 9, 1), 2458738.5]
+        [luxon.DateTime.utc(2003, 10, 17, 19, 30, 30), 2458738.5]
       ];
       jdTestCases.forEach(t => {
-        const jdRet = jd(t[0]);
+        const jdRet = julianDate(t[0]);
         console.log(t[0].toString(), jdRet, jdRet === t[1]);
       });
-      console.log("Julian Century", julianCentury(jdTestCases[5][0]));
+
+      // Test cases
+      const testDate = jdTestCases[5][0];
+      console.log("Julian Century", julianCentury(testDate));
+      console.log("Julian Ephemeris Century", julianEphemerisCentury(testDate));
+
+      const jme = julianEphemerisMillennium(testDate);
+      console.log("Julian Ephemeris Millenium", jme);
+
       console.log(
-        "Julian Ephemeris Century",
-        julianEphemerisCentury(jdTestCases[5][0])
+        "heliocentric longitude of earth (L)",
+        heliocentricLongitude(testDate)
       );
       console.log(
-        "Julian Ephemeris Millenium",
-        julianEphemerisMillennium(jdTestCases[5][0])
+        "heliocentric latitude of earth (B)",
+        heliocentricLatitude(testDate)
+      );
+      console.log("earth radius vector (R)", earthRadiusVector(testDate));
+      console.log(
+        "geocentric longitude (phi): ",
+        geocentricLongitude(heliocentricLongitude(testDate))
       );
       console.log(
-        "heliocentric longitude of earth",
-        heliocentricLongitude(jdTestCases[5][0])
+        "geocentric latitude (beta): ",
+        geocentricLatitude(heliocentricLatitude(testDate))
+      );
+      const jce = julianEphemerisCentury(testDate);
+      const nutResult = nutation(jce);
+      const delta_psi = nutResult.longitude;
+      const delta_epsilon = nutResult.obliquity;
+      console.log("nutation [dPsi, dEpsilon]: ", delta_psi, delta_epsilon);
+
+      const epsilon = trueEclipticObliquity(testDate);
+      console.log("true obliquity of ecliptic (epsilon): ", epsilon);
+
+      console.log("Apparent Sun Longitude: ", apparentSunLongitude(testDate));
+
+      const alpha = geocentricSunRightAscension(testDate);
+      console.log("Geocentric sun right ascension (alpha) ", alpha);
+
+      const delta = geocentricSunDeclination(testDate);
+      console.log("geocentric sun declination (delta) ", delta);
+
+      const localLongitude = -105.1786;
+      console.log(
+        "observer local hour angle (H) ",
+        observerLocalHourAngle(testDate, localLongitude)
+      );
+      const localLatitude = 39.742476;
+      const localElevation = 1830.14;
+      const topocentricSun = topocentricSunPosition(
+        testDate,
+        localLatitude,
+        localLongitude,
+        localElevation
+      );
+      const h_prime = topocentricSun.localHourAngle;
+      console.log(
+        "topocentric sun right ascension (alpha-prime): ",
+        topocentricSun.rightAscension
       );
       console.log(
-        "heliocentric latitude of earth",
-        heliocentricLatitude(jdTestCases[5][0])
+        "topocentric sun declination (delta-prime): ",
+        topocentricSun.declination
       );
-      console.log("earth radius vector", earthRadiusVector(jdTestCases[5][0]));
+      console.log("topocentric local hour angle (H-prime): ", h_prime);
+      const localPressure = 820.0;
+      const localTemp = 11.0;
+      const topocentricElevation = topocentricZenith(
+        localLatitude,
+        h_prime,
+        topocentricSun.declination,
+        localPressure,
+        localTemp
+      );
+      console.log(
+        "topocentric zenith angle: ",
+        topocentricElevation.zenithAngle,
+        `(${topocentricElevation.elevationAngle})`
+      );
+      const topocentricAzimuth = topocentricAzimuthAngle(
+        localLatitude,
+        h_prime,
+        topocentricSun.declination
+      );
+      console.log("topocentric azimuth", topocentricAzimuth);
+
+      const eot = equationOfTime(jme, alpha, delta_psi, epsilon);
+      console.log("Equation of time (minutes): ", eot);
     </script>
   </body>
 </html>

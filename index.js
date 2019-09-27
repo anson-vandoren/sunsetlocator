@@ -1,13 +1,37 @@
-Date.prototype.julian = function() {
-  // Start of this year (0th day)
-  const start = new Date(this.getFullYear(), 0, 0);
-  // without (possibly) daylight savings time
-  let diff = this - start;
-  // add in changes from daylight savings time if applicable
-  diff += (start.getTimezoneOffset() - this.getTimezoneOffset()) * 60 * 1000;
-  // divide by milliseconds per day
-  return Math.floor(diff / 86400000);
-};
+/**
+ * An angle expressed in degrees
+ * @typedef {number} Degrees
+ */
+
+/**
+ * An angle expressed in radians
+ * @typedef {number} Radians
+ */
+
+/**
+ * A distance measured in meters
+ * @typedef {number} Meters
+ */
+
+/**
+ * A distance measured in Astronomical Units (AU)
+ * @typedef {number} AstronomicalUnits
+ */
+
+/**
+ * A pressure measured in millibars
+ * @typedef {number} Millibar
+ */
+
+/**
+ * A temperature measured in degrees Celsius
+ * @typedef {number} Celsius
+ */
+
+/**
+ * A time measured in minutes
+ * @typedef {number} Minutes
+ */
 
 /**
  * Return the fraction of the day that is complete
@@ -24,7 +48,7 @@ function dayFraction(d) {
   return d.diff(dayStart).milliseconds / msecInDay;
 }
 
-function jd(d) {
+function julianDate(d) {
   // calculate the Julian Day
   // https://www.nrel.gov/docs/fy08osti/34302.pdf (Equation 4)
   d = d.toUTC();
@@ -69,9 +93,194 @@ function deltaT(year, month, day) {
   // further data at: http://maia.usno.navy.mil/ser7/ser7.dat
 
   const results = {
-    first: { year: "2019.00", data: 69.34 },
-    "2019.00": 69.34,
-    "2019.25": 69.48,
+    first: { year: "1973.25", data: 43.6737 },
+    "1973.25": 43.6737,
+    "1973.50": 43.9562,
+    "1973.75": 44.1982,
+    "1974.00": 44.4841,
+    "1974.25": 44.7386,
+    "1974.50": 44.9986,
+    "1974.75": 45.2064,
+    "1975.00": 45.4761,
+    "1975.25": 45.7375,
+    "1975.50": 45.982,
+    "1975.75": 46.1825,
+    "1976.00": 46.4567,
+    "1976.25": 46.7302,
+    "1976.50": 46.997,
+    "1976.75": 47.2362,
+    "1977.00": 47.5214,
+    "1977.25": 47.7781,
+    "1977.50": 48.0348,
+    "1977.75": 48.246,
+    "1978.00": 48.5344,
+    "1978.25": 48.8365,
+    "1978.50": 49.1013,
+    "1978.75": 49.307,
+    "1979.00": 49.5861,
+    "1979.25": 49.8556,
+    "1979.50": 50.1019,
+    "1979.75": 50.2968,
+    "1980.00": 50.5387,
+    "1980.25": 50.7658,
+    "1980.50": 50.9761,
+    "1980.75": 51.1538,
+    "1981.00": 51.3808,
+    "1981.25": 51.5985,
+    "1981.50": 51.8133,
+    "1981.75": 51.9603,
+    "1982.00": 52.1668,
+    "1982.25": 52.368,
+    "1982.50": 52.5751,
+    "1982.75": 52.734,
+    "1983.00": 52.9565,
+    "1983.25": 53.2197,
+    "1983.50": 53.4335,
+    "1983.75": 53.5845,
+    "1984.00": 53.7882,
+    "1984.25": 53.9443,
+    "1984.50": 54.0856,
+    "1984.75": 54.1914,
+    "1985.00": 54.3427,
+    "1985.25": 54.4898,
+    "1985.50": 54.6355,
+    "1985.75": 54.7174,
+    "1986.00": 54.8712,
+    "1986.25": 54.9997,
+    "1986.50": 55.1132,
+    "1986.75": 55.1898,
+    "1987.00": 55.3222,
+    "1987.25": 55.4629,
+    "1987.50": 55.5812,
+    "1987.75": 55.6656,
+    "1988.00": 55.8197,
+    "1988.25": 55.9663,
+    "1988.50": 56.0939,
+    "1988.75": 56.1611,
+    "1989.00": 56.3,
+    "1989.25": 56.4283,
+    "1989.50": 56.5697,
+    "1989.75": 56.6739,
+    "1990.00": 56.8553,
+    "1990.25": 57.0471,
+    "1990.50": 57.2226,
+    "1990.75": 57.3643,
+    "1991.00": 57.5653,
+    "1991.25": 57.7711,
+    "1991.50": 57.9576,
+    "1991.75": 58.1043,
+    "1992.00": 58.3092,
+    "1992.25": 58.5401,
+    "1992.50": 58.741,
+    "1992.75": 58.8986,
+    "1993.00": 59.1218,
+    "1993.25": 59.3574,
+    "1993.50": 59.585,
+    "1993.75": 59.7588,
+    "1994.00": 59.9845,
+    "1994.25": 60.2042,
+    "1994.50": 60.4012,
+    "1994.75": 60.5578,
+    "1995.00": 60.7853,
+    "1995.25": 61.0277,
+    "1995.50": 61.2454,
+    "1995.75": 61.4036,
+    "1996.00": 61.6287,
+    "1996.25": 61.8132,
+    "1996.50": 61.9969,
+    "1996.75": 62.1202,
+    "1997.00": 62.295,
+    "1997.25": 62.4754,
+    "1997.50": 62.6571,
+    "1997.75": 62.7926,
+    "1998.00": 62.9659,
+    "1998.25": 63.1462,
+    "1998.50": 63.2844,
+    "1998.75": 63.3422,
+    "1999.00": 63.4673,
+    "1999.25": 63.5679,
+    "1999.50": 63.6642,
+    "1999.75": 63.7147,
+    "2000.00": 63.8285,
+    "2000.25": 63.9075,
+    "2000.50": 63.9799,
+    "2000.75": 64.0093,
+    "2001.00": 64.0908,
+    "2001.25": 64.1584,
+    "2001.50": 64.2117,
+    "2001.75": 64.2223,
+    "2002.00": 64.2998,
+    "2002.25": 64.3735,
+    "2002.50": 64.4132,
+    "2002.75": 64.4168,
+    "2003.00": 64.4734,
+    "2003.25": 64.5269,
+    "2003.50": 64.5512,
+    //"2003.75": 64.5415,
+    // TODO: return to correct values
+    "2003.75": 67,
+    "2004.00": 64.5736,
+    "2004.25": 64.6176,
+    "2004.50": 64.653,
+    "2004.75": 64.64,
+    "2005.00": 64.6876,
+    "2005.25": 64.7575,
+    "2005.50": 64.7995,
+    "2005.75": 64.7921,
+    "2006.00": 64.8452,
+    "2006.25": 64.9175,
+    "2006.50": 64.9895,
+    "2006.75": 65.0371,
+    "2007.00": 65.1464,
+    "2007.25": 65.2494,
+    "2007.50": 65.3413,
+    "2007.75": 65.3711,
+    "2008.00": 65.4573,
+    "2008.25": 65.545,
+    "2008.50": 65.6287,
+    "2008.75": 65.676,
+    "2009.00": 65.7768,
+    "2009.25": 65.8595,
+    "2009.50": 65.9509,
+    "2009.75": 65.9839,
+    "2010.00": 66.0699,
+    "2010.25": 66.1683,
+    "2010.50": 66.2409,
+    "2010.75": 66.2441,
+    "2011.00": 66.3246,
+    "2011.25": 66.3957,
+    "2011.50": 66.4749,
+    "2011.75": 66.5056,
+    "2012.00": 66.603,
+    "2012.25": 66.6925,
+    "2012.50": 66.7708,
+    "2012.75": 66.8103,
+    "2013.00": 66.9069,
+    "2013.25": 67.0258,
+    "2013.50": 67.1266,
+    "2013.75": 67.1717,
+    "2014.00": 67.281,
+    "2014.25": 67.389,
+    "2014.50": 67.4858,
+    "2014.75": 67.5353,
+    "2015.00": 67.6439,
+    "2015.25": 67.7591,
+    "2015.50": 67.8606,
+    "2015.75": 67.9546,
+    "2016.00": 68.1024,
+    "2016.25": 68.2664,
+    "2016.50": 68.3964,
+    "2016.75": 68.463,
+    "2017.00": 68.5927,
+    "2017.25": 68.7135,
+    "2017.50": 68.8245,
+    "2017.75": 68.8689,
+    "2018.00": 68.9676,
+    "2018.25": 69.0499,
+    "2018.50": 69.1134,
+    "2018.75": 69.1356,
+    "2019.00": 69.2202,
+    "2019.25": 69.3032,
     "2019.50": 69.62,
     "2019.75": 69.71,
     "2020.00": 69.87,
@@ -118,21 +327,21 @@ function deltaT(year, month, day) {
   return results[yearLookup];
 }
 
-function jde(d) {
+function julianEphemerisDay(d) {
   // https://www.nrel.gov/docs/fy08osti/34302.pdf Equation 5
-  const jdate = jd(d);
+  const jdate = julianDate(d);
   const dt = deltaT(d.year, d.month, d.day);
   return jdate + dt / 86400;
 }
 
 function julianCentury(d) {
   // https://www.nrel.gov/docs/fy08osti/34302.pdf Equation 6
-  return (jd(d) - 2451545) / 35625;
+  return (julianDate(d) - 2451545) / 35625;
 }
 
 function julianEphemerisCentury(d) {
   // https://www.nrel.gov/docs/fy08osti/34302.pdf Equation 7
-  return (jde(d) - 2451545) / 36525;
+  return (julianEphemerisDay(d) - 2451545) / 36525;
 }
 
 function julianEphemerisMillennium(d) {
@@ -368,24 +577,38 @@ function earthRadiusVector(date) {
   return earth_values(earth_periodic_term_summation("R", date), date);
 }
 
+/**
+ * Calculate the heliocentric latitude for a given date
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Step 3.2.7
+ * @param {luxon.DateTime} date
+ * @returns {Degrees}
+ */
 function heliocentricLatitude(date) {
-  //https://www.nrel.gov/docs/fy08osti/34302.pdf Step 3.2.7
   return rad2deg(earth_values(earth_periodic_term_summation("B", date), date));
 }
 
 /**
- * Convert radians to degrees (not limited to a range)
- * @param rad
- * @returns {number}
+ * Convert an angle in radians to degrees
+ * @param {Radians} rad
+ * @returns {Degrees}
  */
 function rad2deg(rad) {
-  return (rad * 180) / Math.PI;
+  return (rad * 180.0) / Math.PI;
+}
+
+/**
+ * Converts an angle in degrees to radians
+ * @param {Degrees} deg
+ * @returns {Radians}
+ */
+function deg2rad(deg) {
+  return (Math.PI * deg) / 180.0;
 }
 
 /**
  * Limit degrees to 0 <= result <= 360
- * @param degrees
- * @returns {number}
+ * @param {Degrees} degrees
+ * @returns {Degrees}
  */
 function limit_degrees(degrees) {
   degrees /= 360;
@@ -412,4 +635,530 @@ function earth_periodic_term_summation(term_type, date) {
   const reducer = (acc, row) => acc + row[1] * Math.cos(row[2] + row[3] * jme);
   const term_obj = earthConstants[term_type];
   return Object.keys(term_obj).map(key => term_obj[key].reduce(reducer, 0));
+}
+
+/**
+ * Geocentric longitude based on heliocentric longitude
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Eqn. 13
+ * @param heliocentricLongitude
+ * @returns {number} geocentric longitude of the sun
+ */
+function geocentricLongitude(heliocentricLongitude) {
+  return limit_degrees(heliocentricLongitude + 180);
+}
+
+/**
+ * Geocentric latitude based on heliocentric latitude
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Eqn. 14
+ * @param {Degrees} heliocentricLatitude
+ * @returns {Degrees}
+ */
+function geocentricLatitude(heliocentricLatitude) {
+  return -heliocentricLatitude;
+}
+
+const nutationXCoefficients = {
+  // from https://www.nrel.gov/docs/fy08osti/34302.pdf Eqns. 15-19
+  // 0: mean elongation of the moon from the sun (degrees)
+  // 1: mean anomaly of the sun (Earth) (degrees)
+  // 2: mean anomaly of the moon (degrees)
+  // 3: moon's argument of latitude (degrees)
+  // 4: longitude of the ascending node of the moon's mean orbit on the ecliptic,
+  //     measured from the mean equinox of the date (degrees)
+  0: [297.85036, 445267.11148, -0.0019142, 1 / 189474],
+  1: [357.52772, 35999.05034, -0.0001603, -1 / 300000],
+  2: [134.96298, 477198.867398, 0.0086972, 1 / 56250],
+  3: [93.27191, 483202.017538, -0.0036825, 1 / 327270],
+  4: [125.04452, -1934.136261, 0.0020708, 1 / 450000]
+};
+
+/**
+ * Third order polynomial based on:
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Eqns. 15-19
+ * @param num
+ * @param jce
+ * @returns {*}
+ */
+function nutationFactors(num, jce) {
+  const cx = nutationXCoefficients[num];
+  const reducer = (acc, cur, idx) => acc + cur * jce ** idx;
+  return cx.reduce(reducer, 0);
+}
+
+const xFactors = jce =>
+  Object.keys(nutationXCoefficients).map(i => nutationFactors(i, jce));
+
+const nutationPeriodicTerms = [
+  [0, 0, 0, 0, 1, -171996, -174.2, 92025, 8.9],
+  [-2, 0, 0, 2, 2, -13187, -1.6, 5736, -3.1],
+  [0, 0, 0, 2, 2, -2274, -0.2, 977, -0.5],
+  [0, 0, 0, 0, 2, 2062, 0.2, -895, 0.5],
+  [0, 1, 0, 0, 0, 1426, -3.4, 54, -0.1],
+  [0, 0, 1, 0, 0, 712, 0.1, -7, 0],
+  [-2, 1, 0, 2, 2, -517, 1.2, 224, -0.6],
+  [0, 0, 0, 2, 1, -386, -0.4, 200, 0],
+  [0, 0, 1, 2, 2, -301, 0, 129, -0.1],
+  [-2, -1, 0, 2, 2, 217, -0.5, -95, 0.3],
+  [-2, 0, 1, 0, 0, -158, 0, 0, 0],
+  [-2, 0, 0, 2, 1, 129, 0.1, -70, 0],
+  [0, 0, -1, 2, 2, 123, 0, -53, 0],
+  [2, 0, 0, 0, 0, 63, 0, 0, 0],
+  [0, 0, 1, 0, 1, 63, 0.1, -33, 0],
+  [2, 0, -1, 2, 2, -59, 0, 26, 0],
+  [0, 0, -1, 0, 1, -58, -0.1, 32, 0],
+  [0, 0, 1, 2, 1, -51, 0, 27, 0],
+  [-2, 0, 2, 0, 0, 48, 0, 0, 0],
+  [0, 0, -2, 2, 1, 46, 0, -24, 0],
+  [2, 0, 0, 2, 2, -38, 0, 16, 0],
+  [0, 0, 2, 2, 2, -31, 0, 13, 0],
+  [0, 0, 2, 0, 0, 29, 0, 0, 0],
+  [-2, 0, 1, 2, 2, 29, 0, -12, 0],
+  [0, 0, 0, 2, 0, 26, 0, 0, 0],
+  [-2, 0, 0, 2, 0, -22, 0, 0, 0],
+  [0, 0, -1, 2, 1, 21, 0, -10, 0],
+  [0, 2, 0, 0, 0, 17, -0.1, 0, 0],
+  [2, 0, -1, 0, 1, 16, 0, -8, 0],
+  [-2, 2, 0, 2, 2, -16, 0.1, 7, 0],
+  [0, 1, 0, 0, 1, -15, 0, 9, 0],
+  [-2, 0, 1, 0, 1, -13, 0, 7, 0],
+  [0, -1, 0, 0, 1, -12, 0, 6, 0],
+  [0, 0, 2, -2, 0, 11, 0, 0, 0],
+  [2, 0, -1, 2, 1, -10, 0, 5, 0],
+  [2, 0, 1, 2, 2, -8, 0, 3, 0],
+  [0, 1, 0, 2, 2, 7, 0, -3, 0],
+  [-2, 1, 1, 0, 0, -7, 0, 0, 0],
+  [0, -1, 0, 2, 2, -7, 0, 3, 0],
+  [2, 0, 0, 2, 1, -7, 0, 3, 0],
+  [2, 0, 1, 0, 0, 6, 0, 0, 0],
+  [-2, 0, 2, 2, 2, 6, 0, -3, 0],
+  [-2, 0, 1, 2, 1, 6, 0, -3, 0],
+  [2, 0, -2, 0, 1, -6, 0, 3, 0],
+  [2, 0, 0, 0, 1, -6, 0, 3, 0],
+  [0, -1, 1, 0, 0, 5, 0, 0, 0],
+  [-2, -1, 0, 2, 1, -5, 0, 3, 0],
+  [-2, 0, 0, 0, 1, -5, 0, 3, 0],
+  [0, 0, 2, 2, 1, -5, 0, 3, 0],
+  [-2, 0, 2, 0, 1, 4, 0, 0, 0],
+  [-2, 1, 0, 2, 1, 4, 0, 0, 0],
+  [0, 0, 1, -2, 0, 4, 0, 0, 0],
+  [-1, 0, 1, 0, 0, -4, 0, 0, 0],
+  [-2, 1, 0, 0, 0, -4, 0, 0, 0],
+  [1, 0, 0, 0, 0, -4, 0, 0, 0],
+  [0, 0, 1, 2, 0, 3, 0, 0, 0],
+  [0, 0, -2, 2, 2, -3, 0, 0, 0],
+  [-1, -1, 1, 0, 0, -3, 0, 0, 0],
+  [0, 1, 1, 0, 0, -3, 0, 0, 0],
+  [0, -1, 1, 2, 2, -3, 0, 0, 0],
+  [2, -1, -1, 2, 2, -3, 0, 0, 0],
+  [0, 0, 3, 2, 2, -3, 0, 0, 0],
+  [2, -1, 0, 2, 2, -3, 0, 0, 0]
+];
+
+function nutationLongitude(jce) {
+  const x = xFactors(jce);
+  const dPsiRows = nutationPeriodicTerms.map(
+    row =>
+      (row[5] + row[6] * jce) *
+      Math.sin(
+        deg2rad(
+          [0, 1, 2, 3, 4]
+            .map(idx => x[idx] * row[idx])
+            .reduce((acc, cur) => acc + cur, 0)
+        )
+      )
+  );
+  return dPsiRows.reduce((acc, cur) => acc + cur, 0) / 36000000;
+}
+
+function nutationObliquity(jce) {
+  const x = xFactors(jce);
+  const dEpsilonRows = nutationPeriodicTerms.map(
+    row =>
+      (row[7] + row[8] * jce) *
+      Math.cos(
+        deg2rad(
+          [0, 1, 2, 3, 4]
+            .map(idx => x[idx] * row[idx])
+            .reduce((acc, cur) => acc + cur, 0)
+        )
+      )
+  );
+  return dEpsilonRows.reduce((acc, cur) => acc + cur, 0) / 36000000;
+}
+
+/**
+ * Calculate the nutation in longitude and obliquity for given Julian Ephemeris Century
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Section 3.4
+ * @param jce: luxon.DateTime
+ * @returns {{obliquity: number, longitude: number}}
+ */
+function nutation(jce) {
+  const x = xFactors(jce);
+  const rows = nutationPeriodicTerms.map(row => {
+    const xySummation = [0, 1, 2, 3, 4]
+      .map(idx => x[idx] * row[idx])
+      .reduce((acc, cur) => acc + cur, 0);
+    const psi = (row[5] + row[6] * jce) * Math.sin(deg2rad(xySummation));
+    const epsilon = (row[7] + row[8] * jce) * Math.cos(deg2rad(xySummation));
+    return [psi, epsilon];
+  });
+  const sums = rows.reduce((acc, cur) => [acc[0] + cur[0], acc[1] + cur[1]], [
+    0,
+    0
+  ]);
+  return { longitude: sums[0] / 36000000, obliquity: sums[1] / 36000000 };
+}
+
+/**
+ * Calculate the mean obliquity of the ecliptic for a given date (arc seconds)
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Equation 24
+ * @param {luxon.DateTime} date
+ * @returns {number}
+ */
+function meanEclipticObliquity(date) {
+  const jme = julianEphemerisMillennium(date);
+  const term = [
+    84381.448,
+    -4680.93,
+    -1.55,
+    1999.25,
+    -51.38,
+    -249.67,
+    -39.05,
+    7.12,
+    27.87,
+    5.79,
+    2.45
+  ];
+  const U = jme / 10;
+  return [...term.keys()]
+    .map(idx => term[idx] * U ** idx)
+    .reduce((acc, cur) => acc + cur, 0);
+}
+
+/**
+ * Calculate the true obliquity of the ecliptic for a given date (degrees)
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Equation 25
+ * @param date: luxon.DateTime
+ * @returns {Degrees}
+ */
+function trueEclipticObliquity(date) {
+  return (
+    meanEclipticObliquity(date) / 3600 +
+    nutationObliquity(julianEphemerisCentury(date))
+  );
+}
+
+/**
+ * Abberation correction in degrees for a given date (degrees)
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Equation 26
+ * @param {luxon.DateTime} date
+ * @returns {Degrees}
+ */
+function aberrationCorrection(date) {
+  const R = earthRadiusVector(date);
+  return -20.4898 / (3600 * R);
+}
+
+/**
+ * Apparent sun longitude for a given date (degrees)
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Equation 27
+ * @param {luxon.DateTime} date
+ * @returns {Degrees}
+ */
+function apparentSunLongitude(date) {
+  const Theta = geocentricLongitude(heliocentricLongitude(date));
+  const dPsi = nutationLongitude(julianEphemerisCentury(date));
+  const dTau = aberrationCorrection(date);
+  return Theta + dPsi + dTau;
+}
+
+/**
+ * Apparent sidereal time at Greenwich for a given date/time
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf
+ *
+ * @param {luxon.DateTime} date: date to calculate sidereal time for
+ * @param {number} [jd=null]: pre-calculated Julian Date
+ * @param {number} [jc=null]: pre-calculated Julian Century
+ * @returns {Degrees}
+ */
+function greenwichApparentSiderealTime(date, jd = null, jc = null) {
+  jd = jd == null ? julianDate(date) : jd;
+  jc = jc == null ? julianCentury(date) : jc;
+  const meanSidereal = limit_degrees(
+    280.46061837 +
+      360.98564736629 * (jd - 2451545.0) +
+      0.000387933 * jc ** 2 -
+      jc ** 3 / 38710000.0
+  );
+  return (
+    meanSidereal +
+    nutationLongitude(julianEphemerisCentury(date)) *
+      Math.cos(deg2rad(trueEclipticObliquity(date)))
+  );
+}
+
+/**
+ * Geocentric sun right ascension (alpha), in degrees
+ * From https://www.nrel.gov/docs/fy08osti/34302.pdf Step 3.9
+ * @param {luxon.DateTime} date
+ * @param {Degrees} [lambda=0] apparent sun longitude
+ * @param {Degrees} [epsilon=0] true ecliptic obliquity
+ * @param {number} [beta=0] geocentric latitude
+ * @returns {Degrees}
+ */
+function geocentricSunRightAscension(date, lambda = 0, epsilon = 0, beta = 0) {
+  lambda = lambda ? lambda : apparentSunLongitude(date);
+  epsilon = epsilon ? epsilon : trueEclipticObliquity(date);
+  beta = beta ? beta : geocentricLatitude(heliocentricLatitude(date));
+
+  const lambda_rad = deg2rad(lambda);
+  const epsilon_rad = deg2rad(epsilon);
+
+  return limit_degrees(
+    rad2deg(
+      Math.atan2(
+        Math.sin(lambda_rad) * Math.cos(epsilon_rad) -
+          Math.tan(deg2rad(beta)) * Math.sin(epsilon_rad),
+        Math.cos(lambda_rad)
+      )
+    )
+  );
+}
+
+/**
+ * Geocentric sun declination (delta), in degrees
+ * From https://www.nrel.gov/docs/fy08osti/34302.pdf Step 3.10
+ * @param {luxon.DateTime} date
+ * @param {Degrees} [lambda=0] apparent sun longitude
+ * @param {Degrees} [epsilon=0] true ecliptic obliquity
+ * @param {number} [beta=0] geocentric latitude
+ * @returns {Degrees}
+ */
+function geocentricSunDeclination(date, lambda = 0, epsilon = 0, beta = 0) {
+  lambda = lambda ? lambda : apparentSunLongitude(date);
+  epsilon = epsilon ? epsilon : trueEclipticObliquity(date);
+  beta = beta ? beta : geocentricLatitude(heliocentricLatitude(date));
+
+  const beta_rad = deg2rad(beta);
+  const epsilon_rad = deg2rad(epsilon);
+
+  return rad2deg(
+    Math.asin(
+      Math.sin(beta_rad) * Math.cos(epsilon_rad) +
+        Math.cos(beta_rad) * Math.sin(epsilon_rad) * Math.sin(deg2rad(lambda))
+    )
+  );
+}
+
+/**
+ * Observer local angle (H), measured westward from south in degrees
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Step 3.11
+ * @param date
+ * @param observerLongitude
+ * @param nu
+ * @param alpha
+ * @returns {Degrees}
+ */
+function observerLocalHourAngle(date, observerLongitude, nu = 0, alpha = 0) {
+  nu = nu ? nu : greenwichApparentSiderealTime(date);
+  alpha = alpha ? alpha : geocentricSunRightAscension(date);
+
+  return limit_degrees(nu + observerLongitude - alpha);
+}
+
+/**
+ * Topocentric sun position (right ascension and declination) and local hour angle in degrees
+ * From https://www.nrel.gov/docs/fy08osti/34302.pdf Step 3.12-3.13
+ * @param {luxon.DateTime} date Date and time of observer
+ * @param {Degrees} observerLatitude Local latitude
+ * @param {Degrees} observerLongitude Local longitude
+ * @param {Meters} observerElevation Local elevation
+ * @param {AstronomicalUnits} R Earth radius vector
+ * @param {Degrees} H Observer local hour angle
+ * @param {Degrees} delta Geocentric sun declination
+ * @param {Degrees} alpha Geocentric sun right ascension
+ * @returns {{declination: Degrees, rightAscension: Degrees, localHourAngle: Degrees}}
+ */
+function topocentricSunPosition(
+  date,
+  observerLatitude,
+  observerLongitude,
+  observerElevation,
+  R = 0,
+  H = 0,
+  delta = 0,
+  alpha = 0
+) {
+  R = R ? R : earthRadiusVector(date);
+  const h_rad = H
+    ? H
+    : deg2rad(observerLocalHourAngle(date, observerLongitude));
+
+  const delta_rad = delta ? delta : deg2rad(geocentricSunDeclination(date));
+  alpha = alpha ? alpha : geocentricSunRightAscension(date);
+
+  const lat_rad = deg2rad(observerLatitude);
+
+  const xi = 8.794 / (3600.0 * R);
+  const xi_rad = deg2rad(xi);
+
+  const u = Math.atan(0.99664719 * Math.tan(lat_rad));
+  const x = Math.cos(u) + (observerElevation * Math.cos(lat_rad)) / 6378140;
+  const y =
+    0.99664719 * Math.sin(u) +
+    (observerElevation * Math.sin(lat_rad)) / 6378140;
+  const deltaAlpha_rad = Math.atan2(
+    -x * Math.sin(xi_rad) * Math.sin(h_rad),
+    Math.cos(delta_rad) - x * Math.sin(xi_rad) * Math.cos(h_rad)
+  );
+  const alphaPrime = alpha + rad2deg(deltaAlpha_rad);
+  const deltaPrime = Math.atan2(
+    (Math.sin(delta_rad) - y * Math.sin(xi_rad)) * Math.cos(deltaAlpha_rad),
+    Math.cos(delta_rad) - x * Math.sin(xi_rad) * Math.cos(h_rad)
+  );
+
+  const hPrime = rad2deg(h_rad) - rad2deg(deltaAlpha_rad);
+
+  return {
+    rightAscension: alphaPrime,
+    declination: rad2deg(deltaPrime),
+    localHourAngle: hPrime
+  };
+}
+
+/**
+ * Calculate topocentric zenith
+ * @param {Degrees} observerLatitude Latitude at observation point
+ * @param {Degrees} hPrime Topocentric local hour angle
+ * @param {Degrees} deltaPrime Topocentric sun declination
+ * @param {Millibar} pressure Atmospheric pressure at observation point
+ * @param {Celsius} temp Temperature at observation point
+ */
+function topocentricZenith(
+  observerLatitude,
+  hPrime,
+  deltaPrime,
+  pressure,
+  temp
+) {
+  const lat_rad = deg2rad(observerLatitude);
+  const delta_prime_rad = deg2rad(deltaPrime);
+
+  const uncorrectedElevationAngle = rad2deg(
+    Math.asin(
+      Math.sin(lat_rad) * Math.sin(delta_prime_rad) +
+        Math.cos(lat_rad) *
+          Math.cos(delta_prime_rad) *
+          Math.cos(deg2rad(hPrime))
+    )
+  );
+  const elevationAngle =
+    uncorrectedElevationAngle +
+    atmosphericRefractionCorrection(uncorrectedElevationAngle, pressure, temp);
+
+  const zenithAngle = 90 - elevationAngle;
+  return { elevationAngle: elevationAngle, zenithAngle: zenithAngle };
+}
+
+function atmosphericRefractionCorrection(
+  uncorrectedZenithAngle,
+  pressure,
+  temp
+) {
+  return (
+    (pressure / 1010.0) *
+    (283.0 / (273.0 + temp)) *
+    (1.02 /
+      (60.0 *
+        Math.tan(
+          deg2rad(
+            uncorrectedZenithAngle + 10.3 / (uncorrectedZenithAngle + 5.11)
+          )
+        )))
+  );
+}
+
+/**
+ * Calculate approximate pressure for a given altitude (neglecting weather effects)
+ * https://en.wikipedia.org/wiki/Atmospheric_pressure#Altitude_variation
+ * @param {Meters}elevation
+ * @returns {Millibar} Atmospheric pressure
+ */
+function pressureAtElevation(elevation) {
+  const p0 = 1013.25; //mBar
+  const cp = 1004.68506; // J/(kg*K)
+  const T0 = 288.16; // K
+  const g = 9.80665; // m/s**2
+  const M = 0.02896968; // kg/mol
+  const R0 = 8.314462618; // J/(mol*K)
+
+  return p0 * (1 - (g * elevation) / (cp * T0) ** ((cp * M) / R0));
+}
+
+/**
+ * Calculate topocentric azimuth angle (Phi) in degrees
+ * @param {Degrees} observerLatitude
+ * @param {Degrees} hPrime Topocentric local hour angle
+ * @param {Degrees} deltaPrime Topocentric sun declination
+ * @returns {number} Topocentric azimuth angle
+ */
+function topocentricAzimuthAngle(observerLatitude, hPrime, deltaPrime) {
+  const hPrime_rad = deg2rad(hPrime);
+  const lat_rad = deg2rad(observerLatitude);
+  const gamma = limit_degrees(
+    rad2deg(
+      Math.atan2(
+        Math.sin(hPrime_rad),
+        Math.cos(hPrime_rad) * Math.sin(lat_rad) -
+          Math.tan(deg2rad(deltaPrime)) * Math.cos(lat_rad)
+      )
+    )
+  );
+  return limit_degrees(gamma + 180);
+}
+
+/**
+ * Calculate sun's mean longitude (in degrees
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Equation A2
+ * @param {number} jme Julian Ephemeris Millennium
+ * @returns {Degrees} Equation of Time
+ */
+function sunMeanLongitude(jme) {
+  const m_factors = [
+    280.4664567,
+    360007.6982779,
+    0.03032028,
+    1 / 49931,
+    -1 / 15300,
+    -1 / 2000000
+  ];
+  return limit_degrees(
+    m_factors
+      .map((factor, idx) => factor * jme ** idx)
+      .reduce((acc, cur) => acc + cur, 0)
+  );
+}
+
+/**
+ * Calculate Equation of Time, or the difference between solar apparent time and
+ * mean time.
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Equation A1
+ * @param {number} jme Julian Ephemeris Millennium
+ * @param {Degrees} alpha Geocentric right ascension
+ * @param {Degrees} delta_psi Nutation in longitude
+ * @param {Degrees} epsilon Obliquity of the ecliptic
+ * @returns {Minutes} Equation of Time
+ */
+function equationOfTime(jme, alpha, delta_psi, epsilon) {
+  const M = sunMeanLongitude(jme);
+
+  const degrees =
+    M - 0.0057183 - alpha + delta_psi * Math.cos(deg2rad(epsilon));
+  const minutes = degrees * 4;
+
+  if (Math.abs(minutes) <= 20) {
+    return minutes;
+  }
+  return minutes < -20 ? minutes + 1440 : minutes - 1440;
 }
