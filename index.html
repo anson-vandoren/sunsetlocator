@@ -89,36 +89,38 @@
         [luxon.DateTime.utc(2003, 10, 17, 19, 30, 30), 2458738.5]
       ];
       jdTestCases.forEach(t => {
-        const jdRet = julianDate(t[0]);
+        const jdRet = julianDay(t[0]);
         console.log(t[0].toString(), jdRet, jdRet === t[1]);
       });
 
       // Test cases
       const testDate = jdTestCases[5][0];
-      console.log("Julian Century", julianCentury(testDate));
-      console.log("Julian Ephemeris Century", julianEphemerisCentury(testDate));
 
-      const jme = julianEphemerisMillennium(testDate);
-      console.log("Julian Ephemeris Millenium", jme);
+      const jd = julianDay(testDate);
+      const delta_t = deltaT(testDate);
+      const jde = julianEphemerisDay(jd, delta_t);
+      const jc = julianCentury(jd);
+      const jce = julianEphemerisCentury(jde);
+      const jme = julianEphemerisMillennium(jce);
 
-      console.log(
-        "heliocentric longitude of earth (L)",
-        heliocentricLongitude(testDate)
-      );
-      console.log(
-        "heliocentric latitude of earth (B)",
-        heliocentricLatitude(testDate)
-      );
-      console.log("earth radius vector (R)", earthRadiusVector(testDate));
-      console.log(
-        "geocentric longitude (phi): ",
-        geocentricLongitude(heliocentricLongitude(testDate))
-      );
-      console.log(
-        "geocentric latitude (beta): ",
-        geocentricLatitude(heliocentricLatitude(testDate))
-      );
-      const jce = julianEphemerisCentury(testDate);
+      console.log("Julian Century", jc);
+      console.log("Julian Ephemeris Century", jce);
+      console.log("Julian Ephemeris Millennium", jme);
+
+      const _L = heliocentricLongitude(jme);
+      const B = heliocentricLatitude(jme);
+      const R = earthRadiusVector(jme);
+
+      console.log("heliocentric longitude of earth (L)", _L);
+      console.log("heliocentric latitude of earth (B)", B);
+      console.log("earth radius vector (R)", R);
+
+      const Theta = geocentricLongitude(_L);
+      const beta = geocentricLatitude(B);
+
+      console.log("geocentric longitude (Theta): ", Theta);
+      console.log("geocentric latitude (beta): ", beta);
+
       const nutResult = nutation(jce);
       const delta_psi = nutResult.longitude;
       const delta_epsilon = nutResult.obliquity;
@@ -181,6 +183,8 @@
 
       const eot = equationOfTime(jme, alpha, delta_psi, epsilon);
       console.log("Equation of time (minutes): ", eot);
+
+      sunRiseSetTransit(jd, jc, jde);
     </script>
   </body>
 </html>

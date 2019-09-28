@@ -34,48 +34,92 @@
  */
 
 /**
- * Return the fraction of the day that is complete
- * @param {luxon.DateTime} d a luxon DateTime of interest
+ * Convert an angle in radians to degrees
+ * @param {Radians} rad
+ * @returns {Degrees}
  */
-function dayFraction(d) {
+function rad2deg(rad) {
+  return (rad * 180.0) / Math.PI;
+}
+
+/**
+ * Converts an angle in degrees to radians
+ * @param {Degrees} deg
+ * @returns {Radians}
+ */
+function deg2rad(deg) {
+  return (Math.PI * deg) / 180.0;
+}
+
+/**
+ * Limit degrees to 0 <= result <= 360
+ * @param {Degrees} degrees
+ * @returns {Degrees}
+ */
+function limit_degrees(degrees) {
+  degrees /= 360;
+  const limited = 360.0 * (degrees - Math.floor(degrees));
+  return limited < 0 ? limited + 360 : limited;
+}
+
+const sum = arr => arr.reduce((acc, cur) => arr + cur, 0);
+
+/**
+ * Return the fraction of the day that is complete
+ * @param {luxon.DateTime} date a luxon DateTime of interest
+ * @return {number} Fractional part of day complete
+ */
+function dayFraction(date) {
   // convert incoming date to UTC
-  d = d.toUTC();
+  date = date.toUTC();
   // get the start of this day
-  const dayStart = luxon.DateTime.utc(d.year, d.month, d.day, 0, 0, 0);
+  const dayStart = luxon.DateTime.utc(date.year, date.month, date.day, 0, 0, 0);
   // calculate total milliseconds in a full day
   const msecInDay = 24 * 60 * 60 * 1000;
   // return the fraction of this day completed
-  return d.diff(dayStart).milliseconds / msecInDay;
+  return date.diff(dayStart).milliseconds / msecInDay;
 }
 
-function julianDate(d) {
-  // calculate the Julian Day
-  // https://www.nrel.gov/docs/fy08osti/34302.pdf (Equation 4)
-  d = d.toUTC();
-  let month = d.month;
-  let year = d.year;
+/**
+ * Calculate the Julian Day from a calendar date
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Equation 4
+ * @param {luxon.DateTime} date DateTime in question
+ * @returns {number} Julian Day
+ */
+function julianDay(date) {
+  date = date.toUTC();
+
+  // Shift Jan/Feb to previous years for easier counting
+  let month = date.month;
+  let year = date.year;
   if (month <= 2) {
     month += 12;
     year -= 1;
   }
-  const yearPart = parseInt(365.25 * (year + 4716));
-  const monthPart = parseInt(30.6001 * (month + 1));
-  const dayPart = d.day + dayFraction(d);
-  const tzOffsetFraction = d.offset / (60 * 24);
+  const yearPart = Math.trunc(365.25 * (year + 4716));
+  const monthPart = Math.trunc(30.6001 * (month + 1));
+  const dayPart = date.day + dayFraction(date);
+  const tzOffsetFraction = date.offset / (60 * 24);
 
   let jd = yearPart + monthPart + dayPart - 1524.5 - tzOffsetFraction;
 
-  const A = parseInt(d.year / 100);
-  const B = jd < 2299160 ? 0 : 2 - A + parseInt(A / 4);
+  const A = Math.trunc(date.year / 100);
+  const B = jd < 2299160 ? 0 : 2 - A + Math.trunc(A / 4);
 
   jd += B;
   return jd;
 }
 
-function deltaT(year, month, day) {
+/**
+ * Get the ∆T (TT-UT) for a given day
+ * @param {luxon.DateTime} date Day in question
+ * @returns {number|*}
+ */
+function deltaT(date) {
+  const year = date.year;
   // TODO: pull actual data from somewhere
-  const ord = luxon.DateTime.utc(year, month, day).ordinal;
-  const daysInYear = luxon.DateTime.utc(year, 12, 31).ordinal;
+  const ord = date.ordinal;
+  const daysInYear = luxon.DateTime.utc(date.year, 12, 31).ordinal;
   const frac = ord / daysInYear;
   const quarter = Math.floor(frac / 0.25);
   const quarterFrac = quarter * 0.25;
@@ -327,25 +371,44 @@ function deltaT(year, month, day) {
   return results[yearLookup];
 }
 
-function julianEphemerisDay(d) {
-  // https://www.nrel.gov/docs/fy08osti/34302.pdf Equation 5
-  const jdate = julianDate(d);
-  const dt = deltaT(d.year, d.month, d.day);
-  return jdate + dt / 86400;
+/**
+ * Calculate the Julian Ephemeris Day
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Equation 5
+ * @param {number} jd Julian Day
+ * @param {number} delta_t ∆T (TT-UT)
+ * @returns {number} Julian Ephemeris Day
+ */
+function julianEphemerisDay(jd, delta_t) {
+  return jd + delta_t / 86400;
 }
 
-function julianCentury(d) {
-  // https://www.nrel.gov/docs/fy08osti/34302.pdf Equation 6
-  return (julianDate(d) - 2451545) / 35625;
+/**
+ * Calculate the Julian Century
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Equation 6
+ * @param {number} jd Julian Day
+ * @returns {number} Julian Century
+ */
+function julianCentury(jd) {
+  return (jd - 2451545) / 35625;
 }
 
-function julianEphemerisCentury(d) {
-  // https://www.nrel.gov/docs/fy08osti/34302.pdf Equation 7
-  return (julianEphemerisDay(d) - 2451545) / 36525;
+/**
+ * Calculate Julian Ephemeris Century
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Equation 7
+ * @param {number} jde Julian Ephemeris Day
+ * @returns {number} Julian Ephemeris Century
+ */
+function julianEphemerisCentury(jde) {
+  return (jde - 2451545) / 36525;
 }
 
-function julianEphemerisMillennium(d) {
-  return julianEphemerisCentury(d) / 10;
+/**
+ * Calculate Julian Ephemeris Millenium
+ * @param {number} jce Julian Ephemeris Century
+ * @returns {number} Julian Ephemeris Millenium
+ */
+function julianEphemerisMillennium(jce) {
+  return jce / 10;
 }
 
 const earthConstants = {
@@ -564,97 +627,83 @@ const earthConstants = {
   }
 };
 
-function heliocentricLongitude(date) {
-  //https://www.nrel.gov/docs/fy08osti/34302.pdf Steps 3.2.1-3.2.6
-
-  return limit_degrees(
-    rad2deg(earth_values(earth_periodic_term_summation("L", date), date))
-  );
-}
-
-function earthRadiusVector(date) {
-  //https://www.nrel.gov/docs/fy08osti/34302.pdf Equations 9-12
-  return earth_values(earth_periodic_term_summation("R", date), date);
+/**
+ * Calculate Earth heliocentric longitude (L)
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Steps 3.2.1-3.2.6
+ * @param {number} jme Julian Ephemeris Millennium
+ * @returns {Degrees} Earth heliocentric longitude
+ */
+function heliocentricLongitude(jme) {
+  let long_rad = earth_values(earth_periodic_term_summation("L", jme), jme);
+  return limit_degrees(rad2deg(long_rad));
 }
 
 /**
  * Calculate the heliocentric latitude for a given date
  * https://www.nrel.gov/docs/fy08osti/34302.pdf Step 3.2.7
- * @param {luxon.DateTime} date
- * @returns {Degrees}
+ * @param {number} jme Julian Ephemeris Millennium
+ * @returns {Degrees} Earth heliocentric latitude
  */
-function heliocentricLatitude(date) {
-  return rad2deg(earth_values(earth_periodic_term_summation("B", date), date));
+function heliocentricLatitude(jme) {
+  let lat_rad = earth_values(earth_periodic_term_summation("B", jme), jme);
+  return rad2deg(lat_rad);
 }
 
 /**
- * Convert an angle in radians to degrees
- * @param {Radians} rad
- * @returns {Degrees}
+ * Calculate Earth radius vector
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Equations 9-12
+ * @param {number} jme Julian Ephemeris Millennium
+ * @returns {AstronomicalUnits} Earth radius vector
  */
-function rad2deg(rad) {
-  return (rad * 180.0) / Math.PI;
-}
-
-/**
- * Converts an angle in degrees to radians
- * @param {Degrees} deg
- * @returns {Radians}
- */
-function deg2rad(deg) {
-  return (Math.PI * deg) / 180.0;
-}
-
-/**
- * Limit degrees to 0 <= result <= 360
- * @param {Degrees} degrees
- * @returns {Degrees}
- */
-function limit_degrees(degrees) {
-  degrees /= 360;
-  const limited = 360.0 * (degrees - Math.floor(degrees));
-  return limited < 0 ? limited + 360 : limited;
+function earthRadiusVector(jme) {
+  return earth_values(earth_periodic_term_summation("R", jme), jme);
 }
 
 /**
  * Calculate the heliocentric parameter described in
- * https://www.nrel.gov/docs/fy08osti/34302.pdf
- * Equation 11
- * @param row_sums sum of each row from table A4.2
- * @param date
- * @returns {number}
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Equation 11
+ * @param {number[]} row_sums Sum of each row from table A4.2
+ * @param {number} jme Julian Ephemeris Millennium
+ * @returns {number} Heliocentric parameter described by `row_sums`
  */
-function earth_values(row_sums, date) {
-  const jme = julianEphemerisMillennium(date);
+function earth_values(row_sums, jme) {
   const reducer = (acc, cur, idx) => acc + cur * jme ** idx;
   return row_sums.reduce(reducer, 0) / 1e8;
 }
 
-function earth_periodic_term_summation(term_type, date) {
-  const jme = julianEphemerisMillennium(date);
+/**
+ * Perform row summation of earth periodic terms given by `term_type`
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Equations 9-10
+ * @param {string} term_type L, R, or B
+ * @param {number} jme Julian Ephemeris Millennium
+ * @returns {number[]} Array of summed rows from Table A4.2
+ */
+function earth_periodic_term_summation(term_type, jme) {
   const reducer = (acc, row) => acc + row[1] * Math.cos(row[2] + row[3] * jme);
   const term_obj = earthConstants[term_type];
   return Object.keys(term_obj).map(key => term_obj[key].reduce(reducer, 0));
 }
 
 /**
- * Geocentric longitude based on heliocentric longitude
+ * Geocentric longitude of the sun Theta
+ * "Geocentric" == sun position calculated with respect to Earth's center
  * https://www.nrel.gov/docs/fy08osti/34302.pdf Eqn. 13
- * @param heliocentricLongitude
- * @returns {number} geocentric longitude of the sun
+ * @param {Degrees} L Heliocentric longitude of the earth
+ * @returns {Degrees} Geocentric longitude of the sun
  */
-function geocentricLongitude(heliocentricLongitude) {
-  return limit_degrees(heliocentricLongitude + 180);
+function geocentricLongitude(L) {
+  return limit_degrees(L + 180);
 }
 
 /**
- * Geocentric latitude based on heliocentric latitude
+ * Geocentric latitude of the sun
+ * "Geocentric" == sun position calculated with respect to Earth's center
  * https://www.nrel.gov/docs/fy08osti/34302.pdf Eqn. 14
- * @param {Degrees} heliocentricLatitude
- * @returns {Degrees}
+ * @param {Degrees} B Heliocentric latitude of the earth
+ * @returns {Degrees} Geocentric latitude of the sun
  */
-function geocentricLatitude(heliocentricLatitude) {
-  return -heliocentricLatitude;
+function geocentricLatitude(B) {
+  return -B;
 }
 
 const nutationXCoefficients = {
@@ -675,9 +724,9 @@ const nutationXCoefficients = {
 /**
  * Third order polynomial based on:
  * https://www.nrel.gov/docs/fy08osti/34302.pdf Eqns. 15-19
- * @param num
- * @param jce
- * @returns {*}
+ * @param {number} num Subscript for X
+ * @param {number} jce Julian Ephemeris Century
+ * @returns {number} Summation of terms
  */
 function nutationFactors(num, jce) {
   const cx = nutationXCoefficients[num];
@@ -686,7 +735,9 @@ function nutationFactors(num, jce) {
 }
 
 const xFactors = jce =>
-  Object.keys(nutationXCoefficients).map(i => nutationFactors(i, jce));
+  Object.keys(nutationXCoefficients).map(i =>
+    nutationFactors(parseInt(i), jce)
+  );
 
 const nutationPeriodicTerms = [
   [0, 0, 0, 0, 1, -171996, -174.2, 92025, 8.9],
@@ -754,36 +805,46 @@ const nutationPeriodicTerms = [
   [2, -1, 0, 2, 2, -3, 0, 0, 0]
 ];
 
+/**
+ * Calculate the nutation in longitude of earth from the ecliptic
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Section 3.4
+ * @param {number} jce Julian Ephemeris Century
+ * @returns {Degrees} nutation in longitude (deltaPsi)
+ */
 function nutationLongitude(jce) {
+  // get factors X0-X4 (Equations 15-18)
   const x = xFactors(jce);
+
+  // calculate ΔΨᵢ (Equation 20)
   const dPsiRows = nutationPeriodicTerms.map(
     row =>
       (row[5] + row[6] * jce) *
-      Math.sin(
-        deg2rad(
-          [0, 1, 2, 3, 4]
-            .map(idx => x[idx] * row[idx])
-            .reduce((acc, cur) => acc + cur, 0)
-        )
-      )
+      Math.sin(deg2rad(sum([0, 1, 2, 3, 4].map(idx => x[idx] * row[idx]))))
   );
-  return dPsiRows.reduce((acc, cur) => acc + cur, 0) / 36000000;
+
+  // Equation 22
+  return sum(dPsiRows) / 36000000;
 }
 
+/**
+ * Calculate the nutation in obliquity of earth from the ecliptic
+ * https://www.nrel.gov/docs/fy08osti/34302.pdf Section 3.4
+ * @param {number} jce Julian Ephemeris Century
+ * @returns {Degrees} nutation in obliquity (deltaEpsilon)
+ */
 function nutationObliquity(jce) {
+  // get factors X0-X4 (Equations 15-18)
   const x = xFactors(jce);
+
+  // calculate Δεᵢ (Equation 21)
   const dEpsilonRows = nutationPeriodicTerms.map(
     row =>
       (row[7] + row[8] * jce) *
-      Math.cos(
-        deg2rad(
-          [0, 1, 2, 3, 4]
-            .map(idx => x[idx] * row[idx])
-            .reduce((acc, cur) => acc + cur, 0)
-        )
-      )
+      Math.cos(deg2rad(sum([0, 1, 2, 3, 4].map(idx => x[idx] * row[idx]))))
   );
-  return dEpsilonRows.reduce((acc, cur) => acc + cur, 0) / 36000000;
+
+  // Equation 23
+  return sum(dEpsilonRows) / 36000000;
 }
 
 /**
@@ -843,9 +904,10 @@ function meanEclipticObliquity(date) {
  * @returns {Degrees}
  */
 function trueEclipticObliquity(date) {
+  const jde = julianEphemerisDay(julianDay(date), deltaT(date));
   return (
     meanEclipticObliquity(date) / 3600 +
-    nutationObliquity(julianEphemerisCentury(date))
+    nutationObliquity(julianEphemerisCentury(jde))
   );
 }
 
@@ -856,7 +918,7 @@ function trueEclipticObliquity(date) {
  * @returns {Degrees}
  */
 function aberrationCorrection(date) {
-  const R = earthRadiusVector(date);
+  const R = earthRadiusVector(jme, jce);
   return -20.4898 / (3600 * R);
 }
 
@@ -866,9 +928,9 @@ function aberrationCorrection(date) {
  * @param {luxon.DateTime} date
  * @returns {Degrees}
  */
-function apparentSunLongitude(date) {
-  const Theta = geocentricLongitude(heliocentricLongitude(date));
-  const dPsi = nutationLongitude(julianEphemerisCentury(date));
+function apparentSunLongitude(date, jce) {
+  const Theta = geocentricLongitude(heliocentricLongitude(jme, jce));
+  const dPsi = nutationLongitude(jce);
   const dTau = aberrationCorrection(date);
   return Theta + dPsi + dTau;
 }
@@ -878,13 +940,17 @@ function apparentSunLongitude(date) {
  * https://www.nrel.gov/docs/fy08osti/34302.pdf
  *
  * @param {luxon.DateTime} date: date to calculate sidereal time for
- * @param {number} [jd=null]: pre-calculated Julian Date
- * @param {number} [jc=null]: pre-calculated Julian Century
+ * @param {number} [jd=0]: pre-calculated Julian Date
+ * @param {number} [jc=0]: pre-calculated Julian Century
+ * @param {number} [jde=0]: pre-calculated Julian Ephemeris Day
  * @returns {Degrees}
  */
-function greenwichApparentSiderealTime(date, jd = null, jc = null) {
-  jd = jd == null ? julianDate(date) : jd;
-  jc = jc == null ? julianCentury(date) : jc;
+function greenwichApparentSiderealTime(date, jd = 0, jc = 0, jde = 0) {
+  jd = jd || julianDay(date);
+  jc = jc || julianCentury(jd);
+  const delta_t = deltaT(date);
+  jde = jde || julianEphemerisDay(jd, delta_t);
+
   const meanSidereal = limit_degrees(
     280.46061837 +
       360.98564736629 * (jd - 2451545.0) +
@@ -893,7 +959,7 @@ function greenwichApparentSiderealTime(date, jd = null, jc = null) {
   );
   return (
     meanSidereal +
-    nutationLongitude(julianEphemerisCentury(date)) *
+    nutationLongitude(julianEphemerisCentury(jde)) *
       Math.cos(deg2rad(trueEclipticObliquity(date)))
   );
 }
@@ -990,7 +1056,7 @@ function topocentricSunPosition(
   delta = 0,
   alpha = 0
 ) {
-  R = R ? R : earthRadiusVector(date);
+  R = R ? R : earthRadiusVector(jme, jce);
   const h_rad = H
     ? H
     : deg2rad(observerLocalHourAngle(date, observerLongitude));
@@ -1161,4 +1227,20 @@ function equationOfTime(jme, alpha, delta_psi, epsilon) {
     return minutes;
   }
   return minutes < -20 ? minutes + 1440 : minutes - 1440;
+}
+
+/**
+ * Atmospheric refraction typical value at sunrise and sunset
+ * @type {Degrees}
+ */
+const REFRACTION_AT_SUNSET = 0.5667;
+
+/**
+ * Radius of the sun (degrees)
+ * @type {Degrees}
+ */
+const SUN_RADIUS = 0.26667;
+
+function sunRiseSetTransit(jd, jc, jde) {
+  const siderealMidnight = greenwichApparentSiderealTime(null, jd, jc, jde);
 }
