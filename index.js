@@ -61,6 +61,15 @@ function rad2deg(rad) {
 }
 
 /**
+ * Convert astronomical units (AU) to meters
+ * @param {AstronomicalUnits} au
+ * @returns {Meters}
+ */
+function au2meters(au) {
+  return au * 149597870691;
+}
+
+/**
  * Converts an angle in degrees to radians
  * @param {Degrees} deg
  * @returns {Radians}
@@ -1435,6 +1444,7 @@ function SPA(
   this.date = date;
   this.latitude = latitude;
   this.longitude = longitude;
+  this.latlng = [this.latitude, this.longitude];
   this.elevation = elevation;
   this.temp = temp;
   this.pressure = pressure;
@@ -1525,4 +1535,129 @@ function SPA(
       this.delta_ut1
     );
   };
+}
+
+/**
+ * Earth's equatorial radius (a) - semi-major axis
+ * @type {Meters}
+ */
+const RADIUS_A = 6378137.0;
+/**
+ * Earth's polar radius (b) - semi-minor axis
+ * @type {Meters}
+ */
+const RADIUS_B = 6356752.3;
+
+/**
+ * Calculate the local radius (distance from earth's center) for a given latitude and elevation
+ * @param {Degrees} lat Latitude at observer location
+ * @param {Meters} elev Elevation at observer location
+ * @returns {Meters} Distance to earth's center
+ */
+function geocentricRadius(lat, elev = 0) {
+  const lat_rad = deg2rad(lat);
+  const R = Math.sqrt(
+    ((RADIUS_A ** 2 * Math.cos(lat_rad)) ** 2 +
+      (RADIUS_B ** 2 * Math.sin(lat_rad)) ** 2) /
+      ((RADIUS_A * Math.cos(lat_rad)) ** 2 +
+        (RADIUS_B * Math.sin(lat_rad)) ** 2)
+  );
+  return R + elev;
+}
+
+function latLngFromAzimuth(latlng1, dist, azimuth, elev = 0) {
+  const R = geocentricRadius(latlng1[0], elev);
+  const lat_rad = deg2rad(latlng1[0]);
+  const lng_rad = deg2rad(latlng1[1]);
+  const azi_rad = deg2rad(azimuth);
+
+  const lat2 = Math.asin(
+    Math.sin(lat_rad) * Math.cos(dist / R) +
+      Math.cos(lat_rad) * Math.sin(dist / R) * Math.cos(azi_rad)
+  );
+  const lng2 =
+    lng_rad +
+    Math.atan2(
+      Math.sin(azi_rad) * Math.sin(dist / R) * Math.cos(lat_rad),
+      Math.cos(dist / R) - Math.sin(lat_rad) * Math.sin(lat2)
+    );
+
+  return [
+    Math.round(rad2deg(lat2) * 1e6) / 1e6,
+    Math.round(rad2deg(lng2) * 1e6) / 1e6
+  ];
+}
+
+function testCase() {
+  // Test cases
+  const testDate = luxon.DateTime.utc(2003, 10, 17, 19, 30, 30);
+  const localLong = -105.1786;
+  const localLat = 39.742476;
+  const localElev = 1830.14;
+  const localPressure = 820.0;
+  const localTemp = 11.0;
+  const delta_t = 67;
+  const delta_ut1 = 0;
+
+  const spaTest = new SPA(
+    testDate,
+    localLat,
+    localLong,
+    localElev,
+    localTemp,
+    localPressure,
+    delta_t,
+    delta_ut1
+  );
+  console.log("Julian Day: ", spaTest.jd);
+  console.log("Julian Century", spaTest.jc);
+  console.log("Julian Ephemeris Century", spaTest.jce);
+  console.log("Julian Ephemeris Millennium", spaTest.jme);
+
+  console.log("heliocentric longitude of earth (L)", spaTest.l);
+  console.log("heliocentric latitude of earth (B)", spaTest.b);
+  console.log("earth radius vector (R)", spaTest.r);
+
+  console.log("geocentric longitude (Theta): ", spaTest.theta);
+  console.log("geocentric latitude (beta): ", spaTest.beta);
+
+  console.log(
+    "nutation [dPsi, dEpsilon]: ",
+    spaTest.del_psi,
+    spaTest.del_epsilon
+  );
+
+  console.log("true obliquity of ecliptic (epsilon): ", spaTest.epsilon);
+
+  console.log("Apparent Sun Longitude (lambda): ", spaTest.lambda);
+
+  console.log("Geocentric sun right ascension (alpha) ", spaTest.alpha);
+
+  console.log("geocentric sun declination (delta) ", spaTest.delta);
+
+  console.log("observer local hour angle (H) ", spaTest.h);
+
+  console.log(
+    "topocentric right ascension (alpha-prime): ",
+    spaTest.alpha_prime
+  );
+  console.log("topocentric declination (delta-prime): ", spaTest.delta_prime);
+  console.log("topocentric local hour angle (H-prime): ", spaTest.h_prime);
+
+  console.log("topocentric zenith: ", spaTest.zenith);
+  console.log("topocentric elevation: ", spaTest.e);
+  console.log("topocentric azimuth", spaTest.azimuth);
+  console.log("Equation of time (minutes): ", spaTest.eot);
+
+  sunRiseSetTransit(spaTest);
+  sunRiseSetTransit(
+    new SPA(
+      luxon.DateTime.local(2019, 9, 28, 18, 7),
+      37.739024,
+      -122.189905,
+      20,
+      30,
+      1000
+    )
+  );
 }

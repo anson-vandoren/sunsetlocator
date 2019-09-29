@@ -19,7 +19,62 @@
   <body>
     <div id="mapid"></div>
     <script>
-      var startPoint = [37.626, -122.149];
+      // var startPoint = [37.626, -122.149];
+      // var myMap = L.map("mapid").setView(startPoint, 11);
+      // L.tileLayer(
+      //   "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}",
+      //   {
+      //     attribution:
+      //       'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+      //     maxZoom: 18,
+      //     id: "mapbox.streets",
+      //     accessToken:
+      //       "pk.eyJ1IjoiYW5zb252YW5kb3JlbiIsImEiOiJjazB0cWh3dGEwZzloM250Y3J6aHRlc3ZrIn0.YP5RGsqokNVVyyJeDbRWyA"
+      //   }
+      // ).addTo(myMap);
+      // var marker = L.marker(dest).addTo(myMap);
+      // draw circle to horizon for observer=1.7m
+      // with distant point at 10m, 50m
+      const dist10m = 3.57 * (Math.sqrt(1.7) + Math.sqrt(10));
+      const dist20m = 3.57 * (Math.sqrt(1.7) + Math.sqrt(20));
+      const dist50m = 3.57 * (Math.sqrt(1.7) + Math.sqrt(50));
+
+      // var horiz10m = L.circle(startPoint, {
+      //   color: "red",
+      //   fillColor: "#f03",
+      //   fillOpacity: 0,
+      //   weight: 2,
+      //   radius: dist10m * 1000
+      // }).addTo(myMap);
+      // horiz10m.bindPopup(
+      //   "An object 10m tall will be just visible on the horizon this far away"
+      // );
+
+      // var polygon = L.polygon([
+      //   startPoint,
+      //   dest,
+      //   [startPoint[0], dest[1]]
+      // ]).addTo(myMap);
+
+      // marker.bindPopup("<b>Hello world!</b><br>I am a popup.").openPopup();
+
+      // var popup = L.popup()
+      //   .setLatLng([37.7, -122.4])
+      //   .setContent("I am a standalone popup.")
+      //   .openOn(myMap);
+
+      /* var alertPop = latitude.popup();
+      function onMapClick(e) {
+        alertPop
+          .setLatLng(e.latlng)
+          .setContent('you clicked: ' + e.latlng.toString())
+          .openOn(myMap);
+      }
+
+      myMap.on('click', onMapClick); */
+      const observerLat = 37.756281;
+      const observerLong = -122.472856;
+      var startPoint = [observerLat, observerLong];
       var myMap = L.map("mapid").setView(startPoint, 11);
       L.tileLayer(
         "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}",
@@ -32,128 +87,45 @@
             "pk.eyJ1IjoiYW5zb252YW5kb3JlbiIsImEiOiJjazB0cWh3dGEwZzloM250Y3J6aHRlc3ZrIn0.YP5RGsqokNVVyyJeDbRWyA"
         }
       ).addTo(myMap);
-      var dest = [37.775, -122.404];
-      var marker = L.marker(dest).addTo(myMap);
-      // draw circle to horizon for observer=1.7m
-      // with distant point at 10m, 50m
-      const dist10m = 3.57 * (Math.sqrt(1.7) + Math.sqrt(10));
-      const dist50m = 3.57 * (Math.sqrt(1.7) + Math.sqrt(50));
 
-      var horiz10m = L.circle(startPoint, {
+      const pressure = 1013;
+      const temp = 27;
+      const elev = 10;
+      const date = luxon.DateTime.local(2019, 9, 25, 18, 46);
+      const spa = new SPA(
+        date,
+        observerLat,
+        observerLong,
+        elev,
+        temp,
+        pressure
+      );
+      sunRiseSetTransit(spa);
+      console.log(spa.azimuth);
+      console.log(spa.e);
+      const spaObsPoint = L.marker(spa.latlng).addTo(myMap);
+      var horiz20m = L.circle(spa.latlng, {
         color: "red",
         fillColor: "#f03",
         fillOpacity: 0,
         weight: 2,
-        radius: dist10m * 1000
+        radius: dist20m * 1000
       }).addTo(myMap);
-      horiz10m.bindPopup(
-        "An object 10m tall will be just visible on the horizon this far away"
+      let sunsetLatLng = latLngFromAzimuth(
+        [observerLat, observerLong],
+        dist20m * 1000,
+        spa.azimuth,
+        0
       );
-      var horiz50m = L.circle(startPoint, {
-        color: "red",
-        fillColor: "#f03",
-        fillOpacity: 0,
-        weight: 2,
-        radius: dist50m * 1000
-      }).addTo(myMap);
-
-      var polygon = L.polygon([
-        startPoint,
-        dest,
-        [startPoint[0], dest[1]]
-      ]).addTo(myMap);
-
-      marker.bindPopup("<b>Hello world!</b><br>I am a popup.").openPopup();
-
-      var popup = L.popup()
-        .setLatLng([37.7, -122.4])
-        .setContent("I am a standalone popup.")
-        .openOn(myMap);
-
-      /* var alertPop = latitude.popup();
-      function onMapClick(e) {
-        alertPop
-          .setLatLng(e.latlng)
-          .setContent('you clicked: ' + e.latlng.toString())
-          .openOn(myMap);
-      }
-
-      myMap.on('click', onMapClick); */
-
-      // Test cases
-      const testDate = luxon.DateTime.utc(2003, 10, 17, 19, 30, 30);
-      const localLong = -105.1786;
-      const localLat = 39.742476;
-      const localElev = 1830.14;
-      const localPressure = 820.0;
-      const localTemp = 11.0;
-      const delta_t = 67;
-      const delta_ut1 = 0;
-
-      const spaTest = new SPA(
-        testDate,
-        localLat,
-        localLong,
-        localElev,
-        localTemp,
-        localPressure,
-        delta_t,
-        delta_ut1
-      );
-      console.log("Julian Day: ", spaTest.jd);
-      console.log("Julian Century", spaTest.jc);
-      console.log("Julian Ephemeris Century", spaTest.jce);
-      console.log("Julian Ephemeris Millennium", spaTest.jme);
-
-      console.log("heliocentric longitude of earth (L)", spaTest.l);
-      console.log("heliocentric latitude of earth (B)", spaTest.b);
-      console.log("earth radius vector (R)", spaTest.r);
-
-      console.log("geocentric longitude (Theta): ", spaTest.theta);
-      console.log("geocentric latitude (beta): ", spaTest.beta);
-
-      console.log(
-        "nutation [dPsi, dEpsilon]: ",
-        spaTest.del_psi,
-        spaTest.del_epsilon
-      );
-
-      console.log("true obliquity of ecliptic (epsilon): ", spaTest.epsilon);
-
-      console.log("Apparent Sun Longitude (lambda): ", spaTest.lambda);
-
-      console.log("Geocentric sun right ascension (alpha) ", spaTest.alpha);
-
-      console.log("geocentric sun declination (delta) ", spaTest.delta);
-
-      console.log("observer local hour angle (H) ", spaTest.h);
-
-      console.log(
-        "topocentric right ascension (alpha-prime): ",
-        spaTest.alpha_prime
-      );
-      console.log(
-        "topocentric declination (delta-prime): ",
-        spaTest.delta_prime
-      );
-      console.log("topocentric local hour angle (H-prime): ", spaTest.h_prime);
-
-      console.log("topocentric zenith: ", spaTest.zenith);
-      console.log("topocentric elevation: ", spaTest.e);
-      console.log("topocentric azimuth", spaTest.azimuth);
-      console.log("Equation of time (minutes): ", spaTest.eot);
-
-      sunRiseSetTransit(spaTest);
-      sunRiseSetTransit(
-        new SPA(
-          luxon.DateTime.local(2019, 9, 28, 18, 7),
-          37.739024,
-          -122.189905,
-          20,
-          30,
-          1000
-        )
-      );
+      console.log(sunsetLatLng);
+      const sunsetPoint = L.marker(sunsetLatLng).addTo(myMap);
+      const connector = L.polyline(
+        [[observerLat, observerLong], sunsetLatLng],
+        {
+          color: "blue",
+          weight: 1
+        }
+      ).addTo(myMap);
     </script>
   </body>
 </html>
