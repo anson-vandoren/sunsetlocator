@@ -1550,6 +1550,7 @@ const RADIUS_B = 6356752.3;
 
 /**
  * Calculate the local radius (distance from earth's center) for a given latitude and elevation
+ * https://www.movable-type.co.uk/scripts/latlong.html
  * @param {Degrees} lat Latitude at observer location
  * @param {Meters} elev Elevation at observer location
  * @returns {Meters} Distance to earth's center
@@ -1582,10 +1583,10 @@ function latLngFromAzimuth(latlng1, dist, azimuth, elev = 0) {
       Math.cos(dist / R) - Math.sin(lat_rad) * Math.sin(lat2)
     );
 
-  return [
-    Math.round(rad2deg(lat2) * 1e6) / 1e6,
-    Math.round(rad2deg(lng2) * 1e6) / 1e6
-  ];
+  return {
+    lat: Math.round(rad2deg(lat2) * 1e6) / 1e6,
+    lng: Math.round(rad2deg(lng2) * 1e6) / 1e6
+  };
 }
 
 function testCase() {

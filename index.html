@@ -15,9 +15,11 @@
     ></script>
     <script src="./luxon.min.js"></script>
     <script src="./index.js"></script>
+    <script src="./tz.js"></script>
   </head>
   <body>
     <div id="mapid"></div>
+    <input type="date" id="dt" onchange="updateDate(event)" />
     <script>
       // var startPoint = [37.626, -122.149];
       // var myMap = L.map("mapid").setView(startPoint, 11);
@@ -72,38 +74,44 @@
       }
 
       myMap.on('click', onMapClick); */
-      const observerLat = 37.756281;
-      const observerLong = -122.472856;
-      var startPoint = [observerLat, observerLong];
-      var myMap = L.map("mapid").setView(startPoint, 11);
-      L.tileLayer(
-        "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}",
-        {
-          attribution:
-            'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-          maxZoom: 18,
-          id: "mapbox.streets",
-          accessToken:
-            "pk.eyJ1IjoiYW5zb252YW5kb3JlbiIsImEiOiJjazB0cWh3dGEwZzloM250Y3J6aHRlc3ZrIn0.YP5RGsqokNVVyyJeDbRWyA"
-        }
-      ).addTo(myMap);
+      let observerLat = -44.67396323337423;
+      let observerLong = -192.0743179321289;
+      let startPoint = [observerLat, observerLong];
+      var myMap = L.map("mapid").setView(startPoint, 12);
+      // L.tileLayer(
+      //   "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}",
+      //   {
+      //     attribution:
+      //       'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+      //     maxZoom: 18,
+      //     id: "mapbox.streets",
+      //     accessToken:
+      //       "pk.eyJ1IjoiYW5zb252YW5kb3JlbiIsImEiOiJjazB0cWh3dGEwZzloM250Y3J6aHRlc3ZrIn0.YP5RGsqokNVVyyJeDbRWyA"
+      //   }
+      // ).addTo(myMap);
+      L.tileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution:
+          'Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'
+      }).addTo(myMap);
 
       const pressure = 1013;
       const temp = 27;
       const elev = 10;
-      const date = luxon.DateTime.local(2019, 9, 25, 18, 46);
-      const spa = new SPA(
-        date,
+      var date = luxon.DateTime.local(2019, 6, 21, 20, 53);
+      let spa = new SPA(date, observerLat, observerLong, elev, temp, pressure);
+
+      let sunsetTime = sunRiseSetTransit(spa).sunSet;
+      spa = new SPA(
+        sunsetTime,
         observerLat,
         observerLong,
         elev,
         temp,
         pressure
       );
-      sunRiseSetTransit(spa);
       console.log(spa.azimuth);
       console.log(spa.e);
-      const spaObsPoint = L.marker(spa.latlng).addTo(myMap);
+      let spaObsPoint = L.marker(spa.latlng).addTo(myMap);
       var horiz20m = L.circle(spa.latlng, {
         color: "red",
         fillColor: "#f03",
@@ -126,6 +134,67 @@
           weight: 1
         }
       ).addTo(myMap);
+
+      function onMapClick(e) {
+        console.log("date=", date.toString());
+        const limitLatLng = latlng =>
+          L.latLng(
+            limit_degrees180pm(latlng.lat),
+            limit_degrees180pm(latlng.lng)
+          );
+        const newLatLng = e.latlng;
+
+        console.log("raw latlong", newLatLng);
+        console.log(newLatLng);
+        startPoint = newLatLng;
+        // TODO: get new time zone and apply
+        const limitedLatLng = limitLatLng(newLatLng);
+        const newTz = tzlookup(limitedLatLng.lat, limitedLatLng.lng);
+        date = date.setZone(newTz, { keepLocalTime: true });
+        console.log(newTz);
+        spa = new SPA(date, newLatLng.lat, newLatLng.lng, elev, temp, pressure);
+        sunsetTime = sunRiseSetTransit(spa).sunSet;
+        spa = new SPA(
+          sunsetTime,
+          newLatLng.lat,
+          newLatLng.lng,
+          elev,
+          temp,
+          pressure
+        );
+        sunsetTime = sunRiseSetTransit(spa).sunSet;
+        spaObsPoint.setLatLng(newLatLng);
+        horiz20m.setLatLng(newLatLng);
+
+        sunsetLatLng = latLngFromAzimuth(
+          [newLatLng.lat, newLatLng.lng],
+          dist20m * 1000,
+          spa.azimuth,
+          0
+        );
+        console.log(newLatLng.lat, newLatLng.lng, sunsetLatLng);
+        sunsetPoint.setLatLng(sunsetLatLng);
+        connector.setLatLngs([newLatLng, sunsetLatLng]);
+        console.log(
+          "New sunset: ",
+          sunsetTime.toString(),
+          ", Sunset Azimuth: ",
+          spa.azimuth
+        );
+      }
+
+      myMap.on("click", onMapClick);
+      function updateDate(e) {
+        const dateStr = e.target.value;
+        date = new luxon.DateTime.fromFormat(dateStr, "yyyy-MM-dd", {
+          zone: date.zone
+        });
+        onMapClick({ latlng: new L.LatLng(spa.latitude, spa.longitude) });
+      }
+      const datePicker = document.getElementById("dt");
+      if (datePicker) {
+        datePicker.value = date.toFormat("yyyy-MM-dd");
+      }
     </script>
   </body>
 </html>
