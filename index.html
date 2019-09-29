@@ -80,111 +80,80 @@
 
       myMap.on('click', onMapClick); */
 
-      const jdTestCases = [
-        [luxon.DateTime.utc(2000, 1, 1, 12), 2451545],
-        [luxon.DateTime.utc(1999, 1, 1, 0), 2451179.5],
-        [luxon.DateTime.utc(1987, 1, 27), 2446822.5],
-        [luxon.DateTime.utc(1987, 6, 19, 12), 2446966],
-        [luxon.DateTime.utc(-4712, 1, 1, 12), 0],
-        [luxon.DateTime.utc(2003, 10, 17, 19, 30, 30), 2458738.5]
-      ];
-      jdTestCases.forEach(t => {
-        const jdRet = julianDay(t[0]);
-        console.log(t[0].toString(), jdRet, jdRet === t[1]);
-      });
-
       // Test cases
-      const testDate = jdTestCases[5][0];
-
-      const jd = julianDay(testDate);
-      const delta_t = deltaT(testDate);
-      const jde = julianEphemerisDay(jd, delta_t);
-      const jc = julianCentury(jd);
-      const jce = julianEphemerisCentury(jde);
-      const jme = julianEphemerisMillennium(jce);
-
-      console.log("Julian Century", jc);
-      console.log("Julian Ephemeris Century", jce);
-      console.log("Julian Ephemeris Millennium", jme);
-
-      const _L = heliocentricLongitude(jme);
-      const B = heliocentricLatitude(jme);
-      const R = earthRadiusVector(jme);
-
-      console.log("heliocentric longitude of earth (L)", _L);
-      console.log("heliocentric latitude of earth (B)", B);
-      console.log("earth radius vector (R)", R);
-
-      const Theta = geocentricLongitude(_L);
-      const beta = geocentricLatitude(B);
-
-      console.log("geocentric longitude (Theta): ", Theta);
-      console.log("geocentric latitude (beta): ", beta);
-
-      const nutResult = nutation(jce);
-      const delta_psi = nutResult.longitude;
-      const delta_epsilon = nutResult.obliquity;
-      console.log("nutation [dPsi, dEpsilon]: ", delta_psi, delta_epsilon);
-
-      const epsilon = trueEclipticObliquity(testDate);
-      console.log("true obliquity of ecliptic (epsilon): ", epsilon);
-
-      console.log("Apparent Sun Longitude: ", apparentSunLongitude(testDate));
-
-      const alpha = geocentricSunRightAscension(testDate);
-      console.log("Geocentric sun right ascension (alpha) ", alpha);
-
-      const delta = geocentricSunDeclination(testDate);
-      console.log("geocentric sun declination (delta) ", delta);
-
-      const localLongitude = -105.1786;
-      console.log(
-        "observer local hour angle (H) ",
-        observerLocalHourAngle(testDate, localLongitude)
-      );
-      const localLatitude = 39.742476;
-      const localElevation = 1830.14;
-      const topocentricSun = topocentricSunPosition(
-        testDate,
-        localLatitude,
-        localLongitude,
-        localElevation
-      );
-      const h_prime = topocentricSun.localHourAngle;
-      console.log(
-        "topocentric sun right ascension (alpha-prime): ",
-        topocentricSun.rightAscension
-      );
-      console.log(
-        "topocentric sun declination (delta-prime): ",
-        topocentricSun.declination
-      );
-      console.log("topocentric local hour angle (H-prime): ", h_prime);
+      const testDate = luxon.DateTime.utc(2003, 10, 17, 19, 30, 30);
+      const localLong = -105.1786;
+      const localLat = 39.742476;
+      const localElev = 1830.14;
       const localPressure = 820.0;
       const localTemp = 11.0;
-      const topocentricElevation = topocentricZenith(
-        localLatitude,
-        h_prime,
-        topocentricSun.declination,
+      const delta_t = 67;
+      const delta_ut1 = 0;
+
+      const spaTest = new SPA(
+        testDate,
+        localLat,
+        localLong,
+        localElev,
+        localTemp,
         localPressure,
-        localTemp
+        delta_t,
+        delta_ut1
+      );
+      console.log("Julian Day: ", spaTest.jd);
+      console.log("Julian Century", spaTest.jc);
+      console.log("Julian Ephemeris Century", spaTest.jce);
+      console.log("Julian Ephemeris Millennium", spaTest.jme);
+
+      console.log("heliocentric longitude of earth (L)", spaTest.l);
+      console.log("heliocentric latitude of earth (B)", spaTest.b);
+      console.log("earth radius vector (R)", spaTest.r);
+
+      console.log("geocentric longitude (Theta): ", spaTest.theta);
+      console.log("geocentric latitude (beta): ", spaTest.beta);
+
+      console.log(
+        "nutation [dPsi, dEpsilon]: ",
+        spaTest.del_psi,
+        spaTest.del_epsilon
+      );
+
+      console.log("true obliquity of ecliptic (epsilon): ", spaTest.epsilon);
+
+      console.log("Apparent Sun Longitude (lambda): ", spaTest.lambda);
+
+      console.log("Geocentric sun right ascension (alpha) ", spaTest.alpha);
+
+      console.log("geocentric sun declination (delta) ", spaTest.delta);
+
+      console.log("observer local hour angle (H) ", spaTest.h);
+
+      console.log(
+        "topocentric right ascension (alpha-prime): ",
+        spaTest.alpha_prime
       );
       console.log(
-        "topocentric zenith angle: ",
-        topocentricElevation.zenithAngle,
-        `(${topocentricElevation.elevationAngle})`
+        "topocentric declination (delta-prime): ",
+        spaTest.delta_prime
       );
-      const topocentricAzimuth = topocentricAzimuthAngle(
-        localLatitude,
-        h_prime,
-        topocentricSun.declination
+      console.log("topocentric local hour angle (H-prime): ", spaTest.h_prime);
+
+      console.log("topocentric zenith: ", spaTest.zenith);
+      console.log("topocentric elevation: ", spaTest.e);
+      console.log("topocentric azimuth", spaTest.azimuth);
+      console.log("Equation of time (minutes): ", spaTest.eot);
+
+      sunRiseSetTransit(spaTest);
+      sunRiseSetTransit(
+        new SPA(
+          luxon.DateTime.local(2019, 9, 28, 18, 7),
+          37.739024,
+          -122.189905,
+          20,
+          30,
+          1000
+        )
       );
-      console.log("topocentric azimuth", topocentricAzimuth);
-
-      const eot = equationOfTime(jme, alpha, delta_psi, epsilon);
-      console.log("Equation of time (minutes): ", eot);
-
-      sunRiseSetTransit(jd, jc, jde);
     </script>
   </body>
 </html>
