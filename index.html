@@ -14,70 +14,68 @@
       crossorigin=""
     ></script>
     <script src="./luxon.min.js"></script>
-    <script src="./index.js"></script>
+    <script src="src/index.js"></script>
     <script src="./tz.js"></script>
+    <script src="./src/util.js"></script>
   </head>
   <body>
     <div id="mapid"></div>
-    <input type="date" id="dt" onchange="updateDate(event)" />
+    <input type="date" id="dt" oninput="updateDate(event)" height="96" />
     <script>
-      // var startPoint = [37.626, -122.149];
-      // var myMap = L.map("mapid").setView(startPoint, 11);
-      // L.tileLayer(
-      //   "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}",
-      //   {
-      //     attribution:
-      //       'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-      //     maxZoom: 18,
-      //     id: "mapbox.streets",
-      //     accessToken:
-      //       "pk.eyJ1IjoiYW5zb252YW5kb3JlbiIsImEiOiJjazB0cWh3dGEwZzloM250Y3J6aHRlc3ZrIn0.YP5RGsqokNVVyyJeDbRWyA"
-      //   }
-      // ).addTo(myMap);
-      // var marker = L.marker(dest).addTo(myMap);
-      // draw circle to horizon for observer=1.7m
-      // with distant point at 10m, 50m
-      const dist10m = 3.57 * (Math.sqrt(1.7) + Math.sqrt(10));
-      const dist20m = 3.57 * (Math.sqrt(1.7) + Math.sqrt(20));
-      const dist50m = 3.57 * (Math.sqrt(1.7) + Math.sqrt(50));
-
-      // var horiz10m = L.circle(startPoint, {
-      //   color: "red",
-      //   fillColor: "#f03",
-      //   fillOpacity: 0,
-      //   weight: 2,
-      //   radius: dist10m * 1000
-      // }).addTo(myMap);
-      // horiz10m.bindPopup(
-      //   "An object 10m tall will be just visible on the horizon this far away"
-      // );
-
-      // var polygon = L.polygon([
-      //   startPoint,
-      //   dest,
-      //   [startPoint[0], dest[1]]
-      // ]).addTo(myMap);
-
-      // marker.bindPopup("<b>Hello world!</b><br>I am a popup.").openPopup();
-
-      // var popup = L.popup()
-      //   .setLatLng([37.7, -122.4])
-      //   .setContent("I am a standalone popup.")
-      //   .openOn(myMap);
-
-      /* var alertPop = latitude.popup();
-      function onMapClick(e) {
-        alertPop
-          .setLatLng(e.latlng)
-          .setContent('you clicked: ' + e.latlng.toString())
-          .openOn(myMap);
-      }
-
-      myMap.on('click', onMapClick); */
+      var keys = {};
+      window.onkeyup = e => (keys[e.keyCode] = false);
+      window.onkeydown = e => (keys[e.keyCode] = true);
       let observerLat = -44.67396323337423;
-      let observerLong = -192.0743179321289;
+      let observerLong = 167.9256821;
+      const startTz = tzlookup(observerLat, observerLong);
       let startPoint = [observerLat, observerLong];
-      var myMap = L.map("mapid").setView(startPoint, 12);
+      var date = luxon.DateTime.fromJSDate(new Date(), { zone: startTz });
+
+      const dist20m = 3.57 * (Math.sqrt(1.7) + Math.sqrt(20));
+
+      const pressure = 1013;
+      const temp = 27;
+      const elev = 10;
+
+      let spa = new SPA(date, observerLat, observerLong, elev, temp, pressure);
+
+      let sunsetTime = sunRiseSetTransit(spa).sunSet;
+      spa = new SPA(
+        sunsetTime,
+        observerLat,
+        observerLong,
+        elev,
+        temp,
+        pressure
+      );
+      console.log(spa.azimuth);
+      console.log(spa.e);
+
+      L.TimeScrollHandler = L.Map.ScrollWheelZoom.extend({
+        _onWheelScroll: e => {
+          if (!keys[16]) {
+            return;
+          }
+          const delta = e.deltaX;
+          const byMonth = keys[91];
+          const timeDelta = byMonth ? { months: 1 } : { days: 1 };
+          console.log(keys);
+          if (delta > 0) {
+            date = date.minus(timeDelta);
+          } else if (delta < 0) {
+            date = date.plus(timeDelta);
+          } else {
+            console.log("no scrolling");
+          }
+          setInputDate(document.getElementById("dt"), date);
+          onMapClick({ latlng: new L.LatLng(spa.latitude, spa.longitude) });
+          e.preventDefault();
+        }
+      });
+
+      L.Map.addInitHook("addHandler", "scrollWheelZoom", L.TimeScrollHandler);
+
+      const myMap = L.map("mapid").setView(startPoint, 12);
       // L.tileLayer(
       //   "https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}",
       //   {
@@ -93,24 +91,6 @@
         attribution:
           'Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'
       }).addTo(myMap);
-
-      const pressure = 1013;
-      const temp = 27;
-      const elev = 10;
-      var date = luxon.DateTime.local(2019, 6, 21, 20, 53);
-      let spa = new SPA(date, observerLat, observerLong, elev, temp, pressure);
-
-      let sunsetTime = sunRiseSetTransit(spa).sunSet;
-      spa = new SPA(
-        sunsetTime,
-        observerLat,
-        observerLong,
-        elev,
-        temp,
-        pressure
-      );
-      console.log(spa.azimuth);
-      console.log(spa.e);
       let spaObsPoint = L.marker(spa.latlng).addTo(myMap);
       var horiz20m = L.circle(spa.latlng, {
         color: "red",
@@ -144,14 +124,10 @@
           );
         const newLatLng = e.latlng;
 
-        console.log("raw latlong", newLatLng);
-        console.log(newLatLng);
         startPoint = newLatLng;
-        // TODO: get new time zone and apply
         const limitedLatLng = limitLatLng(newLatLng);
         const newTz = tzlookup(limitedLatLng.lat, limitedLatLng.lng);
         date = date.setZone(newTz, { keepLocalTime: true });
-        console.log(newTz);
         spa = new SPA(date, newLatLng.lat, newLatLng.lng, elev, temp, pressure);
         sunsetTime = sunRiseSetTransit(spa).sunSet;
         spa = new SPA(
@@ -184,6 +160,7 @@
       }
 
       myMap.on("click", onMapClick);
+
       function updateDate(e) {
         const dateStr = e.target.value;
         date = new luxon.DateTime.fromFormat(dateStr, "yyyy-MM-dd", {
@@ -191,10 +168,8 @@
         });
         onMapClick({ latlng: new L.LatLng(spa.latitude, spa.longitude) });
       }
-      const datePicker = document.getElementById("dt");
-      if (datePicker) {
-        datePicker.value = date.toFormat("yyyy-MM-dd");
-      }
+
+      setInputDate(document.getElementById("dt"), date);
     </script>
   </body>
 </html>

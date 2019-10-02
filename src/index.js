@@ -101,9 +101,14 @@ function limit_degrees180pm(degrees) {
   return limited;
 }
 
-const sum = arr => {
+/**
+ * Helper function to sum values in an array
+ * @param {[number]} arr Array of numbers to sum
+ * @returns {number} Sum of elements in the array
+ */
+function sum(arr) {
   return arr.reduce((acc, cur) => acc + cur, 0);
-};
+}
 
 /**
  * Return the fraction of the day that is complete
@@ -1314,6 +1319,7 @@ function sunRiseSetTransit(spa) {
   const midnightUT = startOfDay(spa.date);
 
   // Calculate apparent sidereal time at 0 UT (Step A.2.1)
+
   const nu = new SPA(
     midnightUT,
     spa.latitude,
