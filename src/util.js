@@ -3,3 +3,5 @@ function setInputDate(el, date) {
     el.value = date.toFormat("yyyy-MM-dd");
   }
 }
+
+export { setInputDate };
