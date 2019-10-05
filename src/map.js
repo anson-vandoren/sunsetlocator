@@ -1,5 +1,38 @@
 import L from "leaflet";
-import { setInputDate } from "./util";
+import { getInputDate, setInputDate } from "./util";
+
+let keys = {};
+window.onkeyup = e => (keys[e.code] = false);
+window.onkeydown = e => (keys[e.code] = true);
+
+L.TimeScrollHandler = L.Map.ScrollWheelZoom.extend({
+  _onWheelScroll: e => {
+    // Only change time if Shift is pressed
+    if (!keys["ShiftLeft"]) {
+      return;
+    }
+
+    // If scroll event but no actual change, don't do anything
+    const delta = e.deltaX;
+    if (delta === 0) {
+      return;
+    }
+
+    let date = getInputDate("dt");
+
+    // Change time by a month if other modifier key is also down, otherwise by day
+    const byMonth = keys["AltLeft"] || keys["MetaLeft"] || keys["CtrlLeft"];
+    const timeDelta = byMonth ? { months: 1 } : { days: 1 };
+
+    // Scrolling "up" raises date, "down" lowers it
+    date = delta > 0 ? date.minus(timeDelta) : date.plus(timeDelta);
+
+    // update date input control with the new date
+    setInputDate("dt", date);
+    e.preventDefault();
+  }
+});
+L.Map.addInitHook("addHandler", "scrollWheelZoom", L.TimeScrollHandler);
 
 const dist20m = 3.57 * (Math.sqrt(1.7) + Math.sqrt(20));
 const tileLayers = {

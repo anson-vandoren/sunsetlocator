@@ -4,16 +4,31 @@ function setInputDate(id, date) {
   const el = document.getElementById(id);
   if (el) {
     el.value = date.toFormat("yyyy-MM-dd");
+    if ("createEvent" in document) {
+      let evt = document.createEvent("HTMLEvents");
+      evt.initEvent("change", false, true);
+      el.dispatchEvent(evt);
+    } else {
+      el.fireEvent("onchange");
+    }
   } else {
     console.log("el does not exist:", el, document.getElementById("dt"));
   }
 }
 
-function getInputDate(elId, timezone) {
+function todayWithTz(timezone) {
+  return DateTime.fromJSDate(new Date(), { zone: timezone });
+}
+
+function dateFromInput(inputStr, timezone) {
+  return new DateTime.fromFormat(inputStr, "yyyy-MM-dd", { zone: timezone });
+}
+
+function getInputDate(elId) {
   const el = document.getElementById(elId);
   if (el) {
     const raw = el.value;
-    return DateTime.fromFormat(raw, "yyyy-MM-dd", { zone: timezone });
+    return DateTime.fromFormat(raw, "yyyy-MM-dd");
   }
 }
 
@@ -40,4 +55,11 @@ function limit_degrees180pm(degrees) {
   return limited;
 }
 
-export { getInputDate, setInputDate, limit_degrees, limit_degrees180pm };
+export {
+  dateFromInput,
+  getInputDate,
+  setInputDate,
+  limit_degrees,
+  limit_degrees180pm,
+  todayWithTz
+};
