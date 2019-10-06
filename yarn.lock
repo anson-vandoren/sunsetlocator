@@ -3006,6 +3006,11 @@ lcid@^2.0.0:
   dependencies:
     invert-kv "^2.0.0"
 
+leaflet-semicircle@^2.0.4:
+  version "2.0.4"
+  resolved "https://registry.yarnpkg.com/leaflet-semicircle/-/leaflet-semicircle-2.0.4.tgz#2c6e7d40cb59bb331d25edd4dd355c64afa2428e"
+  integrity sha512-7FV9kGBMSQ1CNZYPxoPCEVpDpiIoh/owZV91BWUKYFik5WuaYij0zGEWOE0elTUlRyTHFJHW4rNfQJ2fqreqnA==
+
 leaflet@^1.5.1:
   version "1.5.1"
   resolved "https://registry.yarnpkg.com/leaflet/-/leaflet-1.5.1.tgz#9afb9d963d66c870066b1342e7a06f92840f46bf"

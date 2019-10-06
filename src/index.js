@@ -1,4 +1,4 @@
-import { latLngFromAzimuth, LimitedSPA, sunRiseSetTransit } from "./spa";
+import { SPA } from "./spa";
 import {
   dateFromInput,
   limit_degrees180pm,
@@ -8,8 +8,20 @@ import {
 import tzlookup from "tz-lookup";
 import Map from "./map.js";
 
-let observerLat = -44.67396323337423;
-let observerLong = 167.9256821;
+function getLatLng() {
+  let savedLatLng = window.localStorage.getItem("observerPoint");
+  let lat = -44.67396323337423;
+  let lng = 167.9256821;
+  if (savedLatLng) {
+    const raw = savedLatLng.split(",");
+    lat = parseFloat(raw[0]);
+    lng = parseFloat(raw[1]);
+  }
+  return { observerLat: lat, observerLong: lng };
+}
+
+const { observerLat, observerLong } = getLatLng();
+
 let currentTz = tzlookup(observerLat, observerLong);
 let startPoint = [observerLat, observerLong];
 let date = todayWithTz(currentTz);
@@ -22,75 +34,45 @@ const elev = 10;
 const myMap = new Map("mapid", startPoint, "OSM");
 
 // generate SPA given the date and arbitrary time
-let spa = new LimitedSPA(date, observerLat, observerLong, elev, temp, pressure);
+let spa = new SPA(date, observerLat, observerLong, elev, temp, pressure);
+myMap.sunset = {
+  pt: spa.sunsetPoint(dist20m * 1000),
+  angle: spa.sunsetAzimuth
+};
+myMap.sunrise = {
+  pt: spa.sunrisePoint(dist20m * 1000),
+  angle: spa.sunriseAzimuth
+};
 
-// calculate sunset time and create new SPA
-let sunsetTime = sunRiseSetTransit(spa).sunSet;
-spa = new LimitedSPA(
-  sunsetTime,
-  observerLat,
-  observerLong,
-  elev,
-  temp,
-  pressure
-);
-
-let sunsetLatLng = latLngFromAzimuth(
-  [observerLat, observerLong],
-  dist20m * 1000,
-  spa.azimuth,
-  0
-);
-myMap.sunset = sunsetLatLng;
-
-function onMapClick(e) {
+function updatePosition(e) {
   const limitLatLng = latlng => ({
     lat: limit_degrees180pm(latlng.lat),
     lng: limit_degrees180pm(latlng.lng)
   });
   const newLatLng = e.latlng;
 
-  startPoint = newLatLng;
   const limitedLatLng = limitLatLng(newLatLng);
   currentTz = tzlookup(limitedLatLng.lat, limitedLatLng.lng);
   date = date.setZone(currentTz, { keepLocalTime: true });
-  spa = new LimitedSPA(
-    date,
-    newLatLng.lat,
-    newLatLng.lng,
-    elev,
-    temp,
-    pressure
-  );
-  sunsetTime = sunRiseSetTransit(spa).sunSet;
-  spa = new LimitedSPA(
-    sunsetTime,
-    newLatLng.lat,
-    newLatLng.lng,
-    elev,
-    temp,
-    pressure
-  );
-  sunsetTime = sunRiseSetTransit(spa).sunSet;
+  spa = new SPA(date, newLatLng.lat, newLatLng.lng, elev, temp, pressure);
   myMap.observer = newLatLng;
 
-  sunsetLatLng = latLngFromAzimuth(
-    [newLatLng.lat, newLatLng.lng],
-    dist20m * 1000,
-    spa.azimuth,
-    0
+  myMap.sunset = spa.sunset(dist20m * 1000);
+  myMap.sunrise = spa.sunrise(dist20m * 1000);
+  window.localStorage.setItem(
+    "observerPoint",
+    Object.values(limitedLatLng).join(",")
   );
-  myMap.sunset = sunsetLatLng;
 }
 
-myMap.on("click", onMapClick);
+myMap.on("click", updatePosition);
 
 function updateDate(e) {
   const dateStr = e.target.value;
   date = dateFromInput(dateStr, date.zone);
-  onMapClick({ latlng: { lat: spa.latitude, lng: spa.longitude } });
+  updatePosition({ latlng: { lat: spa.latitude, lng: spa.longitude } });
 }
-console.log("setting date");
+
 document.onreadystatechange = () => {
   if (document.readyState === "complete") {
     document.getElementById("dt").onchange = updateDate;

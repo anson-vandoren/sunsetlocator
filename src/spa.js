@@ -756,18 +756,6 @@ function startOfDay(date) {
   return DateTime.utc(date.year, date.month, date.day);
 }
 
-function gAST(date, deltaT) {
-  const jd = julianDay(date, 0);
-  const jc = julianCentury(jd);
-  const jde = julianEphemerisDay(jd, deltaT);
-  const jce = julianEphemerisCentury(jde);
-  const x_fac = xFactors(jce);
-  const del_psi = nutationLongitude(jce, x_fac);
-  const jme = julianEphemerisMillennium(jce);
-  const epsilon = trueEclipticObliquity(jme, jce);
-  return greenwichApparentSiderealTime(jd, jc, jde, del_psi, epsilon);
-}
-
 export function sunRiseSetTransit(spa) {
   // find sun elevation at sunrise and sunset
   const h0_prime = -1 * (data.SUN_RADIUS + data.REFRACTION_AT_SUNSET);
@@ -775,7 +763,7 @@ export function sunRiseSetTransit(spa) {
   const midnightUT = startOfDay(spa.date);
 
   // Calculate apparent sidereal time at 0 UT (Step A.2.1)
-  const nu = new LimitedSPA(
+  const nu = new SPA(
     midnightUT,
     spa.latitude,
     spa.longitude,
@@ -789,7 +777,7 @@ export function sunRiseSetTransit(spa) {
   // const nu = gAST(midnightUT, spa.delta_t);
 
   // Calculate geocentric right ascension and declination at 0TT (delta_t=0) (Step A.2.2)
-  const sun_rts = new LimitedSPA(
+  const sun_rts = new SPA(
     midnightUT,
     spa.latitude,
     spa.longitude,
@@ -986,114 +974,53 @@ export function SPA(
   this.azimuth_astro = azi.astronomers;
   this.azimuth = azi.navigators;
 
-  this.add_days = days => {
-    return new SPA(
-      this.date.plus({ days: days }),
-      this.latitude,
-      this.longitude,
-      this.elevation,
-      this.temp,
-      this.pressure,
-      this.delta_t,
-      this.delta_ut1
+  const { sunRise, sunSet } = sunriseSunset(
+    this.date,
+    this.latitude,
+    this.longitude
+  );
+  this.sunsetAzimuth = azimuth(
+    sunSet,
+    this.elevation,
+    this.latitude,
+    this.longitude
+  );
+  this.sunriseAzimuth = azimuth(
+    sunRise,
+    this.elevation,
+    this.latitude,
+    this.longitude
+  );
+
+  this.sunrisePoint = radius => {
+    return latLngFromAzimuth(
+      [this.latitude, this.longitude],
+      radius,
+      this.sunriseAzimuth,
+      0
     );
   };
-}
+  this.sunsetPoint = radius => {
+    return latLngFromAzimuth(
+      [this.latitude, this.longitude],
+      radius,
+      this.sunsetAzimuth,
+      0
+    );
+  };
 
-export function LimitedSPA(
-  date,
-  latitude,
-  longitude,
-  elevation,
-  temp,
-  pressure,
-  delta_t = null,
-  delta_ut1 = null
-) {
-  this.date = date;
-  this.latitude = latitude;
-  this.longitude = longitude;
-  this.latlng = [this.latitude, this.longitude];
-  this.elevation = elevation;
-  this.temp = temp;
-  this.pressure = pressure;
+  this.sunrise = radius => ({
+    pt: this.sunrisePoint(radius),
+    angle: this.sunriseAzimuth
+  });
 
-  this.jd = julianDay(this.date, this.delta_ut1);
-  this.jc = julianCentury(this.jd);
-
-  this.delta_t = delta_t === null ? deltaT(date) : delta_t;
-  this.delta_ut1 = delta_ut1 === null ? 0 : delta_ut1; // TODO: lookup values?
-  this.jde = julianEphemerisDay(this.jd, this.delta_t);
-  this.jce = julianEphemerisCentury(this.jde);
-  this.jme = julianEphemerisMillennium(this.jce);
-
-  this.l = heliocentricLongitude(this.jme);
-  this.b = heliocentricLatitude(this.jme);
-  this.r = earthRadiusVector(this.jme);
-
-  this.theta = geocentricLongitude(this.l);
-  this.beta = geocentricLatitude(this.b);
-
-  this.x_factors = xFactors(this.jce);
-
-  this.del_psi = nutationLongitude(this.jce, this.x_factors);
-  this.del_epsilon = nutationObliquity(this.jce, this.x_factors);
-  this.epsilon = trueEclipticObliquity(this.jme, this.jce);
-
-  this.del_tau = aberrationCorrection(this.r);
-  this.lambda = apparentSunLongitude(this.theta, this.del_psi, this.del_tau);
-  this.nu = greenwichApparentSiderealTime(
-    this.jd,
-    this.jc,
-    this.jde,
-    this.del_psi,
-    this.epsilon
-  );
-
-  this.alpha = geocentricRightAscension(this.lambda, this.epsilon, this.beta);
-  this.delta = geocentricDeclination(this.lambda, this.epsilon, this.beta);
-
-  this.h = observerLocalHourAngle(this.nu, this.longitude, this.alpha);
-  const topocentric = topocentricSunPosition(
-    this.latitude,
-    this.elevation,
-    this.r,
-    this.h,
-    this.delta,
-    this.alpha
-  );
-  this.delta_prime = topocentric.declination;
-  this.alpha_prime = topocentric.rightAscension;
-  this.h_prime = topocentric.localHourAngle;
-
-  const zenith = topocentricZenith(
-    this.latitude,
-    this.h_prime,
-    this.delta_prime,
-    this.pressure,
-    this.temp
-  );
-  this.e0 = zenith.uncorrectedElevation;
-  this.del_e = atmosphericRefractionCorrection(
-    this.e0,
-    this.pressure,
-    this.temp
-  );
-  this.e = zenith.elevationAngle;
-
-  this.eot = equationOfTime(this.jme, this.alpha, this.del_psi, this.epsilon);
-
-  this.zenith = zenith.zenithAngle;
-  const azi = topocentricAzimuthAngle(
-    this.latitude,
-    this.h_prime,
-    this.delta_prime
-  );
-  this.azimuth_astro = azi.astronomers;
-  this.azimuth = azi.navigators;
+  this.sunset = radius => ({
+    pt: this.sunsetPoint(radius),
+    angle: this.sunsetAzimuth
+  });
 
   this.add_days = days => {
-    return new LimitedSPA(
+    return new SPA(
       this.date.plus({ days: days }),
       this.latitude,
       this.longitude,
@@ -1219,4 +1146,148 @@ function testCase() {
       1000
     )
   );
+}
+
+export function sunriseSunset(date, lat, lng) {
+  // find sun elevation at sunrise and sunset
+  const h0_prime = -1 * (data.SUN_RADIUS + data.REFRACTION_AT_SUNSET);
+
+  const midnightUT = startOfDay(date);
+
+  const { jd, jc, jde, jce, jme } = julian(midnightUT);
+
+  const nu = gAST(jd, jc, jde, jce, jme);
+
+  const days = [date.minus({ days: 1 }), date, date.plus({ days: 1 })];
+
+  let alpha_vals = new Array(3);
+  let delta_vals = new Array(3);
+  days.forEach((day, idx) => {
+    const { alpha, delta } = geoRA_D(day);
+    alpha_vals[idx] = alpha;
+    delta_vals[idx] = delta;
+  });
+
+  const m0 = approxSunTransitTime(alpha_vals[1], lng, nu);
+  const h0 = sunHourAngleAtRiseSet(lat, delta_vals[1], h0_prime);
+
+  if (h0 < 0) {
+    return { sunRise: null, sunSet: null };
+  }
+
+  const m_rts = approxSunRiseSet(m0, h0);
+  let sta, sunRise, sunSet, sunTransit;
+  let nu_rts = new Array(m_rts.length);
+  let alpha_prime = new Array(m_rts.length);
+  let delta_prime = new Array(m_rts.length);
+  let h_prime = new Array(m_rts.length);
+  let h_rts = new Array(m_rts.length);
+
+  m_rts.forEach((val, i) => {
+    nu_rts[i] = nu + 360.985647 * val;
+
+    const n = val + deltaT(date) / 86400;
+
+    alpha_prime[i] = rts_alpha_delta_prime(alpha_vals, n);
+    delta_prime[i] = rts_alpha_delta_prime(delta_vals, n);
+
+    h_prime[i] = limit_degrees180pm(nu_rts[i] + lng - alpha_prime[i]);
+    h_rts[i] = rts_sun_altitude(lat, delta_prime[i], h_prime[i]);
+  });
+
+  sta = h_prime[0];
+
+  sunTransit = dateFromDayFrac(m_rts[0] - sta / 360, date);
+  sunRise = dateFromDayFrac(
+    sun_rise_and_set(m_rts, h_rts, delta_prime, lat, h_prime, h0_prime, 1),
+    date
+  );
+  sunSet = dateFromDayFrac(
+    sun_rise_and_set(m_rts, h_rts, delta_prime, lat, h_prime, h0_prime, 2),
+    date
+  );
+  console.log("**sunrise", sunRise.toString());
+  console.log("**sunset", sunSet.toString());
+  return { sunRise: sunRise, sunSet: sunSet };
+}
+
+function geoRA_D(date) {
+  const { jce, jme } = julian(date);
+
+  const l = heliocentricLongitude(jme);
+  const b = heliocentricLatitude(jme);
+  const r = earthRadiusVector(jme);
+
+  const theta = geocentricLongitude(l);
+  const beta = geocentricLatitude(b);
+
+  const x_factors = xFactors(jce);
+
+  const del_psi = nutationLongitude(jce, x_factors);
+  const epsilon = trueEclipticObliquity(jme, jce);
+
+  const del_tau = aberrationCorrection(r);
+  const lambda = apparentSunLongitude(theta, del_psi, del_tau);
+
+  const alpha = geocentricRightAscension(lambda, epsilon, beta);
+  const delta = geocentricDeclination(lambda, epsilon, beta);
+  return { alpha, delta };
+}
+
+function gAST(jd, jc, jde, jce, jme) {
+  const x_factors = xFactors(jce);
+
+  const del_psi = nutationLongitude(jce, x_factors);
+  const epsilon = trueEclipticObliquity(jme, jce);
+  return greenwichApparentSiderealTime(jd, jc, jde, del_psi, epsilon);
+}
+
+function julian(date) {
+  const jd = julianDay(date, 0);
+  const jc = julianCentury(jd);
+  const delta_t = deltaT(date);
+  const jde = julianEphemerisDay(jd, delta_t);
+  const jce = julianEphemerisCentury(jde);
+  const jme = julianEphemerisMillennium(jce);
+
+  return { jd, jc, jde, jce, jme };
+}
+
+function azimuth(date, elevation, latitude, longitude) {
+  const { jd, jc, jde, jce, jme } = julian(date);
+  const l = heliocentricLongitude(jme);
+  const b = heliocentricLatitude(jme);
+  const r = earthRadiusVector(jme);
+
+  const theta = geocentricLongitude(l);
+  const beta = geocentricLatitude(b);
+
+  const x_factors = xFactors(jce);
+
+  const del_psi = nutationLongitude(jce, x_factors);
+
+  const epsilon = trueEclipticObliquity(jme, jce);
+
+  const del_tau = aberrationCorrection(r);
+  const lambda = apparentSunLongitude(theta, del_psi, del_tau);
+  const nu = greenwichApparentSiderealTime(jd, jc, jde, del_psi, epsilon);
+
+  const alpha = geocentricRightAscension(lambda, epsilon, beta);
+  const delta = geocentricDeclination(lambda, epsilon, beta);
+
+  const h = observerLocalHourAngle(nu, longitude, alpha);
+  const topocentric = topocentricSunPosition(
+    latitude,
+    elevation,
+    r,
+    h,
+    delta,
+    alpha
+  );
+  const delta_prime = topocentric.declination;
+  const h_prime = topocentric.localHourAngle;
+
+  const azi = topocentricAzimuthAngle(latitude, h_prime, delta_prime);
+
+  return azi.navigators;
 }

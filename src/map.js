@@ -1,4 +1,5 @@
 import L from "leaflet";
+import Semicircle from "leaflet-semicircle";
 import { getInputDate, setInputDate } from "./util";
 
 let keys = {};
@@ -68,33 +69,39 @@ class Map {
     L.tileLayer(layer.url, layer.options).addTo(this._map);
 
     this._observerMarker = L.marker(this.observer).addTo(this._map);
-    this._observerCircle = L.circle(this.observer, {
-      color: "red",
-      weight: 2,
-      fillOpacity: 0,
-      radius: dist20m * 1000
-    }).addTo(this._map);
 
     this._sunsetMarker = L.marker(this.observer).addTo(this._map);
-    this._sunsetLine = L.polyline(
-      [this.observer, this._sunsetMarker.getLatLng()],
-      {
-        color: "blue",
-        weight: 1
-      }
-    ).addTo(this._map);
+    this._sunriseMarker = L.marker(this.observer).addTo(this._map);
+
+    this._sunpath = L.semiCircle(this.observer, {
+      radius: dist20m * 1000,
+      startAngle: 45,
+      stopAngle: 135,
+      weight: 2,
+      color: "orange",
+      fillOpacity: 0.1
+    }).addTo(this._map);
   }
 
   get sunset() {
     return this._sunsetMarker.getLatLng();
   }
 
-  set sunset(latlng) {
+  set sunset(latlngAngle) {
+    const latlng = latlngAngle.pt;
+    const angle = latlngAngle.angle;
     this._sunsetMarker.setLatLng(latlng);
-    this._sunsetLine.setLatLngs([
-      this.observer,
-      this._sunsetMarker.getLatLng()
-    ]);
+    this._sunpath.setStopAngle(angle);
+  }
+
+  get sunrise() {
+    return this._sunriseMarker.getLatLng();
+  }
+  set sunrise(latlngAngle) {
+    const latlng = latlngAngle.pt;
+    const angle = latlngAngle.angle;
+    this._sunriseMarker.setLatLng(latlng);
+    this._sunpath.setStartAngle(angle);
   }
 
   get observer() {
@@ -104,8 +111,7 @@ class Map {
   set observer(latlng) {
     this._observer = latlng;
     this._observerMarker.setLatLng(this.observer);
-    this._observerCircle.setLatLng(this.observer);
-    this._sunsetLine.setLatLngs([this.observer, this.sunset]);
+    this._sunpath.setLatLng(this.observer);
   }
 
   on(evt, func) {
